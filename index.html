@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&family=Noto+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6f9;
+  --surface:#ffffff;
+  --surface-2:#f7f9fb;
+  --surface-3:#eef1f5;
+  --hairline:#e5e8ee;
+  --border:#d5dae2;
+  --darkened:#f7f9fb;
+  --body-bg:#ffffff;
+
+  --body-fg:#1f2430;
+  --muted:#697586;
+  --heading:#0f172a;
+
+  --primary:#1e40af;
+  --primary-strong:#1a3a9c;
+  --secondary:#1e40af;
+  --secondary-dark:#17347f;
+  --link-fg:#1e40af;
+  --tint:rgba(30,64,175,.08);
+  --tint-strong:rgba(30,64,175,.15);
+  --green:#15803d;
+  --green-bg:rgba(21,128,61,.10);
+  --amber:#a16207;
+  --amber-bg:rgba(202,138,4,.12);
+  --red:#b02a20;
+  --red-bg:rgba(176,42,32,.09);
+  --selected-row:rgba(30,64,175,.06);
+
+  --chart-1:#2b6a8f;
+  --chart-ok:#3f8f5f;
+  --chart-3:#b4544a;
+  --chart-muted:#dfe3e9;
+
+  --r-sm:8px;
+  --r:10px;
+  --r-lg:14px;
+  --r-pill:999px;
+
+  --mono:"Roboto Mono","SFMono-Regular",Consolas,monospace;
+  --sans:"Inter","Noto Sans Thai",Roboto,"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--body-fg);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+a{color:var(--link-fg);text-decoration:none;}
+a:hover{text-decoration:none;color:var(--primary-strong);}
+input,select,textarea,button{font-family:var(--sans);}
+::selection{background:var(--tint-strong);}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:#c8cfd9;border-radius:99px;border:3px solid var(--bg);}
+::-webkit-scrollbar-track{background:transparent;}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
+
+/* ---------- Shell ---------- */
+.shell{display:flex;min-height:100vh;background:var(--bg);}
+
+.sidebar{width:264px;background:var(--surface);border-right:1px solid var(--hairline);flex-shrink:0;padding:14px 12px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;transition:width .18s ease;}
+.sbtop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 6px 14px;}
+.brand{font-size:19px;font-weight:600;letter-spacing:-.02em;color:var(--heading);white-space:nowrap;}
+.railbtn{background:none;border:none;color:var(--muted);width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.railbtn svg{width:20px;height:20px;}
+.railbtn:hover{background:var(--surface-3);color:var(--body-fg);}
+
+
+.navsec{padding:14px 14px 6px;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.navitem{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:var(--r-pill);color:var(--body-fg);font-size:13.5px;margin:1px 0;white-space:nowrap;}
+.navitem i{display:flex;width:20px;height:20px;color:var(--muted);flex-shrink:0;}
+.navitem i svg{width:20px;height:20px;}
+.navitem:hover{background:var(--surface-2);color:var(--body-fg);}
+.navitem.active{background:var(--surface-3);color:var(--heading);font-weight:500;}
+.navitem.active i{color:var(--primary);}
+
+.sbfill{flex:1;min-height:20px;}
+.sbbottom{border-top:1px solid var(--hairline);padding-top:12px;}
+.account{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;background:none;border-radius:var(--r-pill);cursor:pointer;text-align:left;font-family:inherit;}
+.account:hover{background:var(--surface-2);}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+.acctext{font-size:13px;color:var(--body-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* collapsed rail */
+body.railed .sidebar{width:76px;padding-left:10px;padding-right:10px;}
+body.railed .brand,body.railed .navsec,body.railed .acctext,body.railed .navitem span{display:none;}
+body.railed .sbtop{justify-content:center;}
+body.railed .navitem{display:flex;justify-content:center;padding:11px 0;}
+body.railed .navsec{display:block;height:10px;padding:0;}
+body.railed .account{justify-content:center;}
+
+.main{flex:1;min-width:0;padding:34px 40px 70px;}
+
+/* ---------- Page head / object-tools ---------- */
+.pagehead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:20px;}
+.pagehead h1{font-size:28px;font-weight:600;margin:0;font-weight:400;color:var(--heading);letter-spacing:-.015em;}
+.pagehead .sub{color:var(--muted);font-size:13.5px;margin-top:5px;max-width:760px;}
+.objtool{background:var(--surface);color:var(--heading);padding:10px 20px;border-radius:var(--r-pill);font-size:13.5px;font-weight:500;border:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.objtool:hover{background:var(--surface-2);}
+
+/* ---------- Changelist ---------- */
+.toolbar{display:flex;gap:10px;align-items:center;padding:0 0 14px;flex-wrap:wrap;}
+.toolbar input[type=text]{padding:9px 16px;border:1px solid var(--hairline);border-radius:var(--r-pill);font-size:13px;width:280px;background:var(--surface-2);color:var(--body-fg);}
+.toolbar input[type=text]::placeholder{color:var(--muted);}
+.toolbar input[type=text]:focus{outline:none;border-color:var(--primary);}
+.toolbar select{padding:8px 14px;border:1px solid var(--hairline);border-radius:var(--r-pill);font-size:12.5px;background:var(--surface-2);color:var(--body-fg);}
+.toolbar button.search{padding:9px 18px;background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--r-pill);cursor:pointer;font-size:12.5px;color:var(--body-fg);}
+.toolbar button.search:hover{background:var(--surface-3);}
+
+table.changelist{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);font-size:13px;overflow:hidden;}
+table.changelist th{text-align:left;font-weight:500;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:12px 14px;background:var(--surface-2);border-bottom:1px solid var(--hairline);}
+table.changelist th.ctr,table.changelist td.ctr{text-align:center;}
+table.changelist td{padding:12px 14px;border-bottom:1px solid var(--hairline);vertical-align:middle;color:var(--body-fg);}
+table.changelist tr:last-child td{border-bottom:none;}
+table.changelist tr:nth-child(even) td{background:transparent;}
+table.changelist tbody tr:hover td,table.changelist tr:hover td{background:var(--surface-2);}
+table.changelist a.objname{color:var(--primary);font-weight:500;}
+table.changelist a.objname:hover{color:var(--primary-strong);}
+.iconbtn{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:50%;color:var(--muted);margin-right:2px;}
+.iconbtn:hover{background:var(--surface-3);color:var(--primary);}
+.badge{display:inline-block;font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:var(--r-pill);background:var(--surface-3);color:var(--body-fg);border:1px solid var(--hairline);}
+.thumb{font-size:15px;}
+.thumb.up{color:var(--green);}
+.thumb.down{color:var(--red);}
+
+.actionbar{display:flex;align-items:center;gap:12px;padding:12px 4px;background:none;border:none;font-size:12.5px;color:var(--muted);flex-wrap:wrap;}
+.actionbar select{padding:8px 14px;border:1px solid var(--hairline);border-radius:var(--r-pill);font-size:12.5px;background:var(--surface-2);color:var(--body-fg);}
+.actionbar button{padding:8px 18px;border:none;background:var(--tint);color:var(--primary-strong);border-radius:var(--r-pill);cursor:pointer;font-size:12.5px;font-weight:500;}
+.actionbar button:hover{background:var(--tint-strong);}
+.paginfo{padding:12px 4px;font-size:12.5px;color:var(--muted);}
+
+/* ---------- Change form (cards) ---------- */
+.panel{background:transparent;border:none;display:flex;flex-direction:column;gap:14px;}
+fieldset.fs{border:1px solid var(--hairline);border-radius:var(--r-lg);padding:0;margin:0;background:var(--surface);overflow:hidden;}
+fieldset.fs:last-of-type{border-bottom:1px solid var(--hairline);}
+fieldset.fs .fs-h{background:transparent;color:var(--heading);font-size:14px;font-weight:500;padding:16px 22px 0;letter-spacing:-.01em;}
+fieldset.fs .fs-body{padding:14px 22px 20px;}
+fieldset.fs .fs-d{color:var(--muted);font-size:12.5px;margin:0 0 16px;max-width:820px;}
+
+.formrow{padding:11px 0;border-bottom:1px solid var(--hairline);}
+.formrow:last-child{border-bottom:none;}
+.formrow label{display:block;font-size:12.5px;font-weight:500;color:var(--body-fg);margin-bottom:7px;}
+.formrow .help{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
+.formrow select,.formrow input[type=text],.formrow input[type=number],.formrow textarea{
+  padding:10px 14px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;background:var(--surface-2);color:var(--body-fg);width:100%;max-width:440px;transition:border-color .15s,background .15s;
+}
+.formrow input::placeholder,.formrow textarea::placeholder{color:var(--muted);}
+.formrow select:focus,.formrow input:focus,.formrow textarea:focus{outline:none;border-color:var(--primary);background:var(--surface-3);}
+.formrow textarea{max-width:100%;min-height:96px;font-family:var(--mono);font-size:12.5px;resize:vertical;line-height:1.6;}
+.formrow.narrow input,.formrow.narrow select{max-width:160px;}
+.formrow-inline{display:flex;gap:28px;flex-wrap:wrap;}
+.formrow-inline .formrow{flex:1;min-width:200px;border-bottom:none;padding-bottom:0;}
+
+.checkgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;}
+.checkitem{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--hairline);align-items:flex-start;}
+.checkgrid .checkitem:nth-last-child(-n+2){border-bottom:none;}
+.checkitem input[type=checkbox]{appearance:none;-webkit-appearance:none;margin:2px 0 0;width:36px;height:20px;border-radius:var(--r-pill);background:var(--surface-3);border:1px solid var(--border);position:relative;cursor:pointer;flex-shrink:0;transition:background .18s,border-color .18s;}
+.checkitem input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:transform .18s,background .18s;}
+.checkitem input[type=checkbox]:checked{background:var(--primary);border-color:var(--primary);}
+.checkitem input[type=checkbox]:checked::after{transform:translateX(16px);background:#fff;}
+.checkitem .ct{font-size:13.5px;font-weight:500;color:var(--body-fg);}
+.checkitem .cd{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;}
+table.changelist input[type=checkbox],.toolbar input[type=checkbox]{accent-color:var(--primary);width:15px;height:15px;}
+
+.submitrow{display:flex;gap:10px;padding:14px 4px 0;background:none;border:none;align-items:center;flex-wrap:wrap;}
+.btn{border:1px solid var(--border);background:transparent;color:var(--body-fg);padding:10px 22px;font-size:13px;font-weight:500;border-radius:var(--r-pill);cursor:pointer;transition:background .15s,border-color .15s;}
+.btn:hover{background:var(--surface-3);}
+.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+.btn.primary:hover{background:var(--primary-strong);}
+.btn.danger{background:transparent;color:var(--red);border-color:rgba(242,139,130,.5);}
+.btn.danger:hover{background:var(--red-bg);}
+
+/* ---------- Home index ---------- */
+.applist{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);margin-bottom:16px;overflow:hidden;}
+.applist .apph{background:transparent;padding:16px 20px 8px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:none;}
+.applist a.applink{color:var(--body-fg);font-weight:500;}
+.applist a.applink:hover{color:var(--primary);}
+.applist table{width:100%;border-collapse:collapse;}
+.applist td{padding:13px 20px;border-bottom:1px solid var(--hairline);font-size:13.5px;}
+.applist tr:last-child td{border-bottom:none;}
+.applist tr:hover td{background:var(--surface-2);}
+.applist td.addcol,.applist td.chgcol{text-align:right;width:84px;font-size:12px;color:var(--muted);}
+
+/* ---------- API screens ---------- */
+code{font-family:var(--mono);font-size:12px;background:var(--surface-3);color:var(--primary-strong);padding:2px 7px;border-radius:6px;}
+.fs-d code,.checkitem .cd code,table.changelist td code{background:var(--surface-3);}
+.readonly{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--r);padding:10px 14px;max-width:440px;}
+.readonly.err{max-width:100%;color:var(--red);background:var(--red-bg);border-color:rgba(242,139,130,.3);white-space:pre-wrap;}
+.meth{display:inline-block;min-width:52px;text-align:center;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.04em;padding:5px 10px;border-radius:var(--r-pill);background:var(--tint);color:var(--primary-strong);}
+.meth.get{background:var(--green-bg);color:var(--green);}
+.badge.ok{background:var(--green-bg);color:var(--green);border-color:rgba(129,201,149,.3);}
+.badge.off{background:var(--red-bg);color:var(--red);border-color:rgba(242,139,130,.3);}
+.badge.warn{background:var(--amber-bg);color:var(--amber);border-color:rgba(253,214,99,.3);}
+.badge.mono{font-family:var(--mono);font-weight:400;background:var(--surface-3);color:var(--body-fg);}
+.codeblock{margin:0;background:#f6f8fb;color:#243044;font-family:var(--mono);font-size:12px;line-height:1.7;padding:16px 18px;border-radius:var(--r);border:1px solid var(--hairline);overflow-x:auto;white-space:pre;}
+.paypair{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.paylabel{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-bottom:7px;}
+.reveal{border:1px solid rgba(253,214,99,.35);background:var(--amber-bg);border-radius:var(--r-lg);margin-bottom:16px;overflow:hidden;}
+.reveal-h{background:transparent;color:var(--amber);font-size:13px;font-weight:500;padding:14px 20px 0;}
+.reveal-body{display:flex;align-items:center;gap:12px;padding:12px 20px 8px;flex-wrap:wrap;}
+.reveal-body code{font-size:13px;letter-spacing:.02em;padding:10px 14px;background:#fff;border:1px solid var(--border);color:var(--body-fg);}
+.reveal-note{padding:0 20px 16px;font-size:11.5px;color:#8a6d1f;}
+@media (max-width:820px){.paypair{grid-template-columns:1fr;}}
+
+/* ---------- filter_horizontal selector ---------- */
+.selector{display:grid;grid-template-columns:1fr 48px 1fr;gap:14px;align-items:center;max-width:820px;}
+.selector select{width:100%;height:196px;border:1px solid var(--border);border-radius:var(--r);font-size:12.5px;padding:6px;background:var(--surface-2);color:var(--body-fg);}
+.selector select:focus{outline:none;border-color:var(--primary);}
+.selector select:disabled{background:var(--surface-2);color:#a2acba;}
+.selector select option{padding:6px 8px;border-radius:6px;}
+.selector select option:checked{background:var(--tint-strong);color:var(--primary-strong);}
+.selhead{font-size:12px;font-weight:500;color:var(--body-fg);margin-bottom:7px;}
+.selector .arrows{display:flex;flex-direction:column;gap:8px;}
+.selector .arrows button{border:1px solid var(--border);background:var(--surface-2);color:var(--body-fg);border-radius:var(--r-pill);padding:9px 0;font-size:15px;line-height:1;cursor:pointer;transition:background .15s;}
+.selector .arrows button:hover{background:var(--tint);border-color:var(--primary);color:var(--primary-strong);}
+.pwline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+@media (max-width:820px){.selector{grid-template-columns:1fr;}.selector .arrows{flex-direction:row;justify-content:center;}}
+
+
+/* ---------- confirm dialog ---------- */
+.modalback{position:fixed;inset:0;background:rgba(15,23,42,.38);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modalback.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--hairline);box-shadow:0 20px 50px rgba(15,23,42,.22);width:100%;max-width:460px;overflow:hidden;animation:pop .16s ease;}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.99);}to{opacity:1;transform:none;}}
+.modal-t{font-size:17px;font-weight:600;color:var(--heading);padding:22px 24px 0;}
+.modal-b{padding:10px 24px 4px;font-size:13.5px;color:var(--body-fg);line-height:1.65;}
+.modal-b ul{margin:10px 0 0;padding-left:18px;color:var(--muted);}
+.modal-b li{margin-bottom:4px;}
+.modal-b .warn{color:var(--red);}
+.modal-f{display:flex;justify-content:flex-end;gap:10px;padding:18px 24px 22px;}
+.emptycell{color:var(--muted);font-style:italic;text-align:center;padding:22px;}
+
+
+/* ---------- Dashboard ---------- */
+.titlewrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.tierchip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:var(--r-pill);padding:5px 14px;font-size:13px;color:var(--body-fg);background:var(--surface);}
+.tierchip i{width:7px;height:7px;border-radius:50%;background:var(--chart-1);}
+
+.filterbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:22px 0 26px;}
+.filterbar label{font-size:14px;color:var(--muted);margin-right:-2px;}
+.filternote{font-size:12.5px;color:var(--muted);margin-left:4px;}
+.selectwrap{position:relative;display:inline-flex;}
+.selectwrap select{appearance:none;-webkit-appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--body-fg);font-family:inherit;font-size:14px;padding:9px 38px 9px 16px;border-radius:var(--r-sm);cursor:pointer;}
+.selectwrap select:hover{background:var(--surface-2);}
+.selectwrap select:focus{outline:none;border-color:var(--primary);}
+.selectwrap::after{content:"";position:absolute;right:15px;top:50%;width:7px;height:7px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none;}
+.daterange{display:inline-flex;align-items:center;gap:8px;}
+.daterange input[type=date]{border:1px solid var(--border);background:var(--surface);color:var(--body-fg);font-family:var(--sans);font-size:14px;padding:8px 12px;border-radius:var(--r-sm);cursor:pointer;}
+.daterange input[type=date]:focus{outline:none;border-color:var(--primary);}
+.rangesep{font-size:13.5px;color:var(--muted);}
+.selectwrap.sm select{font-size:13px;padding:7px 34px 7px 13px;}
+
+.secthead{display:flex;align-items:center;gap:9px;font-size:20px;font-weight:600;color:var(--heading);letter-spacing:-.01em;margin:30px 0 14px;}
+.secthead .info{width:18px;height:18px;border:1.4px solid var(--muted);border-radius:50%;color:var(--muted);font-size:11px;font-style:italic;font-weight:600;display:inline-flex;align-items:center;justify-content:center;cursor:help;}
+
+.card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-lg);overflow:hidden;}
+.card-h{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px 0;flex-wrap:wrap;}
+.card-t{font-size:15px;font-weight:600;color:var(--heading);}
+.card-s{font-size:12.5px;color:var(--muted);margin-top:3px;}
+.card-b{padding:16px 22px 22px;}
+.card-f{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-top:1px solid var(--hairline);font-size:12.5px;color:var(--muted);}
+.objtool.sm{padding:7px 15px;font-size:13px;}
+
+.dashgrid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-bottom:16px;}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.card.stat{padding:18px 20px;}
+.stat-l{font-size:13px;color:var(--muted);margin-bottom:8px;}
+.stat-v{font-size:28px;font-weight:600;color:var(--heading);letter-spacing:-.02em;line-height:1.15;}
+.stat-v .u{font-size:13px;font-weight:400;color:var(--muted);margin-left:6px;}
+.stat-d{font-size:12.5px;color:var(--muted);margin-top:9px;}
+.stat-d .up{color:var(--green);font-weight:600;}
+
+.legend{display:flex;flex-direction:column;gap:9px;font-size:13px;color:var(--body-fg);}
+.legend > div{display:flex;align-items:center;gap:9px;}
+.legend b{margin-left:auto;font-family:var(--mono);font-size:12.5px;font-weight:600;}
+.legend .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.legend .dot.sq{border-radius:2px;}
+
+.nodatacell{color:var(--muted);font-style:italic;text-align:center;padding:24px;}
+
+.bars{position:relative;}
+.barrow{display:grid;grid-template-columns:140px 1fr 76px;align-items:center;gap:12px;margin-bottom:13px;}
+.barlabel{font-size:13px;color:var(--body-fg);text-align:right;}
+.bartrack{height:20px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+.bar{height:100%;background:var(--chart-1);border-radius:4px;transition:width .3s ease;}
+.barval{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;}
+.baraxis{margin-left:152px;margin-right:88px;border-top:1px solid var(--hairline);padding-top:6px;}
+.axisinner{position:relative;height:16px;}
+.axisinner .tick{position:absolute;transform:translateX(-50%);font-size:10.5px;color:var(--muted);font-family:var(--mono);}
+
+.donutsvg{width:100%;max-width:200px;display:block;margin:0 auto 18px;}
+.donutsvg .dnum{text-anchor:middle;font-family:var(--sans);font-size:24px;font-weight:600;fill:var(--heading);}
+.donutsvg .dlab{text-anchor:middle;font-family:var(--sans);font-size:11px;fill:var(--muted);}
+
+table.changelist.flat{border:none;border-radius:0;}
+table.changelist.flat th{background:var(--surface-2);}
+table.changelist td.num{font-family:var(--mono);font-size:12.5px;}
+table.changelist tr.totalrow td{background:var(--surface-2);font-weight:600;color:var(--heading);border-top:1px solid var(--border);}
+.satcell{display:flex;align-items:center;gap:9px;justify-content:center;}
+.satbar{width:52px;height:5px;border-radius:99px;background:var(--surface-3);overflow:hidden;}
+.satbar i{display:block;height:100%;background:var(--chart-1);}
+.minisearch{padding:8px 14px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:inherit;background:var(--surface);color:var(--body-fg);width:220px;}
+.minisearch:focus{outline:none;border-color:var(--primary);}
+.pager{display:flex;gap:6px;}
+.pager button{border:1px solid var(--border);background:var(--surface);color:var(--body-fg);font-size:12.5px;font-family:inherit;padding:5px 12px;border-radius:6px;cursor:pointer;}
+.pager button.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+.pager button:disabled{color:#b9c0c9;cursor:default;}
+.footnote{font-size:12.5px;color:var(--muted);padding:22px 2px 0;}
+
+.segmented{display:inline-flex;background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--r-sm);padding:3px;gap:2px;}
+.segmented button{border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:500;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:inherit;}
+.segmented button:hover{color:var(--body-fg);}
+.segmented button.on{background:var(--surface);color:var(--heading);box-shadow:0 1px 2px rgba(15,23,42,.08);}
+
+@media (max-width:1180px){
+  .dashgrid{grid-template-columns:1fr;}
+  .statgrid{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:700px){
+  .statgrid{grid-template-columns:1fr;}
+  .barrow{grid-template-columns:104px 1fr 62px;}
+  .baraxis{margin-left:116px;margin-right:74px;}
+}
+
+.view{display:none;}
+.view.active{display:block;animation:fade .18s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+@media (max-width:900px){
+  .sidebar{display:none;}
+  .main{padding:10px 16px 60px;}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sbtop">
+      <div class="brand">AI Agent</div>
+      <button class="railbtn" onclick="toggleRail()" title="Collapse menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16M4 12h10M4 17h16"/></svg></button>
+    </div>
+
+    
+
+    <div class="navsec"><span>Overview</span></div>
+      <a href="#" class="navitem modlink" id="nav-dash" onclick="go('dashboard');return false;"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></i><span>Dashboard</span></a>
+
+    <div class="navsec"><span>Access</span></div>
+      <a href="#" class="navitem modlink" id="nav-users" onclick="go('users-list');return false;"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3.2"/><path d="M2.8 19c0-3.2 2.8-5 6.2-5s6.2 1.8 6.2 5"/><path d="M16.5 5.6a3 3 0 0 1 0 5.6M18 19c0-2.2-.6-3.6-1.7-4.6 2.8.3 4.9 1.9 4.9 4.6"/></svg></i><span>Users</span></a>
+      <a href="#" class="navitem modlink" id="nav-groups" onclick="go('groups-list');return false;"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg></i><span>Groups</span></a>
+      <a href="#" class="navitem modlink" id="nav-userperm" onclick="go('userperm-list');return false;"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2.8 20 6v6c0 4.3-3.2 7.7-8 9.2C7.2 19.7 4 16.3 4 12V6z"/><path d="M9 12.2l2.2 2.2 4-4.2"/></svg></i><span>User Permissions</span></a>
+
+    <div class="navsec"><span>Build</span></div>
+      <a href="#" class="navitem modlink" id="nav-dspy" onclick="go('dspy-list');return false;"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.4"/></svg></i><span>Dspy configs</span></a>
+      <a href="#" class="navitem modlink" id="nav-apikeys" onclick="go('apikeys-list');return false;"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="7.5" cy="12" r="3.6"/><path d="M11.1 12H21M18 12v3.2M15 12v2.4"/></svg></i><span>API keys</span></a>
+
+    <div class="navsec"><span>Observe</span></div>
+      <a href="#" class="navitem modlink" id="nav-audit" onclick="go('auditlogs');return false;"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6"/></svg></i><span>Audit logs</span></a>
+
+
+    <div class="sbfill"></div>
+
+    <div class="sbbottom">
+      <button class="account" onclick="showToast('บัญชีผู้ใช้ · ออกจากระบบ')">
+        <span class="avatar">A</span>
+        <span class="acctext">admin@excise.go.th</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+
+    <!-- ============ USERS — CHANGELIST ============ -->
+    <div class="view" id="view-users-list">
+      <div class="pagehead">
+        <div><h1>Select user to change</h1><div class="sub">Django auth accounts. Sign-in runs through SSO; the password field is a fallback for local admin accounts.</div></div>
+        <button class="objtool" onclick="openUser(-1)">Create user</button>
+      </div>
+      <div class="toolbar">
+        <input type="text" id="userSearch" placeholder="Search username or email..." oninput="renderUsers()">
+        <select id="userGroupFilter" onchange="renderUsers()"><option value="">All groups</option></select>
+        <select id="userStatusFilter" onchange="renderUsers()">
+          <option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="staff">Staff</option><option value="super">Superuser</option>
+        </select>
+        <button class="search">Search</button>
+      </div>
+      <table class="changelist" id="tbl-users">
+        <tr><th class="ctr"><input type="checkbox"></th><th>USERNAME</th><th>EMAIL ADDRESS</th><th>FIRST NAME</th><th>LAST NAME</th><th>GROUPS</th><th class="ctr">STAFF</th><th>LAST LOGIN</th></tr>
+      </table>
+      <div class="actionbar">
+        <span>Action:</span>
+        <select id="userBulkAction">
+          <option>Deactivate selected users</option>
+          <option>Activate selected users</option>
+          <option>Add selected users to group: Analysts</option>
+          <option>Delete selected users</option>
+        </select>
+        <button onclick="runBulk('userBulkAction','users')">Go</button>
+        <span id="userCount" class="paginfo" style="padding:0;"></span>
+      </div>
+    </div>
+
+    <!-- ============ USER — DETAIL ============ -->
+    <div class="view" id="view-user-detail">
+      <div class="pagehead">
+        <div><h1 id="usrTitle">Change user</h1><div class="sub" id="usrSub"></div></div>
+        <button class="objtool" id="usrPermBtn" onclick="openUserPermByEmail()">Edit data permissions</button>
+      </div>
+      <div class="panel">
+        <fieldset class="fs">
+          <div class="fs-h">Account</div>
+          <div class="fs-body">
+            <div class="formrow"><label for="usrUsername">Username</label><input type="text" id="usrUsername"><div class="help">Letters, digits, and @ . + - _ only.</div></div>
+            <div class="formrow" id="usrPwRow">
+              <label>Password</label>
+              <div class="pwline">
+                <div class="readonly" id="usrPwHash">pbkdf2_sha256$600000$•••••••••••••••••</div>
+                <button class="btn" onclick="showToast('Password reset link sent to the user.')">Reset password</button>
+              </div>
+              <div class="help">Raw passwords are not stored, so there is nothing to read here. SSO accounts never use this field.</div>
+            </div>
+            <div class="formrow" id="usrPwNewRow" style="display:none;">
+              <label for="usrPwNew">Password</label>
+              <input type="text" id="usrPwNew" placeholder="Enter a password">
+              <div class="help">At least 12 characters, not entirely numeric, not a common password.</div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Personal info</div>
+          <div class="fs-body">
+            <div class="formrow-inline">
+              <div class="formrow"><label for="usrFirst">First name</label><input type="text" id="usrFirst"></div>
+              <div class="formrow"><label for="usrLast">Last name</label><input type="text" id="usrLast"></div>
+            </div>
+            <div class="formrow-inline" style="padding-top:12px;">
+              <div class="formrow"><label for="usrEmail">Email address</label><input type="text" id="usrEmail"><div class="help">Must be the @excise.go.th address used by SSO.</div></div>
+              <div class="formrow"><label for="usrDept">Department</label><input type="text" id="usrDept"></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Permissions</div>
+          <div class="fs-body">
+            <div class="checkitem"><input type="checkbox" id="usrActive"><div><div class="ct">Active</div><div class="cd">Clear this box instead of deleting the account. Inactive users cannot sign in, and their audit history stays intact.</div></div></div>
+            <div class="checkitem"><input type="checkbox" id="usrStaff" onchange="syncStaffHint()"><div><div class="ct">Staff status</div><div class="cd">Allows sign-in to this admin site.</div></div></div>
+            <div class="checkitem"><input type="checkbox" id="usrSuper" onchange="syncSuperState()"><div><div class="ct">Superuser status</div><div class="cd">Grants every permission without listing them. Grant sparingly.</div></div></div>
+
+            <div style="padding-top:14px;">
+              <div class="selhead">Groups</div>
+              <div class="help" style="margin:0 0 8px;">Groups carry sets of permissions. A user gets every permission of every group they belong to.</div>
+              <div class="selector">
+                <div>
+                  <div class="selhead">Available groups</div>
+                  <select multiple id="usrGroupsAvail" ondblclick="moveSel('usrGroupsAvail','usrGroupsChosen')"></select>
+                </div>
+                <div class="arrows">
+                  <button type="button" onclick="moveSel('usrGroupsAvail','usrGroupsChosen')" title="Add">&rsaquo;</button>
+                  <button type="button" onclick="moveSel('usrGroupsChosen','usrGroupsAvail')" title="Remove">&lsaquo;</button>
+                </div>
+                <div>
+                  <div class="selhead">Chosen groups</div>
+                  <select multiple id="usrGroupsChosen" ondblclick="moveSel('usrGroupsChosen','usrGroupsAvail')"></select>
+                </div>
+              </div>
+            </div>
+
+            <div style="padding-top:18px;">
+              <div class="selhead">User permissions</div>
+              <div class="help" style="margin:0 0 8px;" id="usrPermHelp">Permissions granted directly to this user, on top of group permissions.</div>
+              <div class="selector">
+                <div>
+                  <div class="selhead">Available permissions</div>
+                  <select multiple id="usrPermsAvail" ondblclick="moveSel('usrPermsAvail','usrPermsChosen')"></select>
+                </div>
+                <div class="arrows">
+                  <button type="button" onclick="moveSel('usrPermsAvail','usrPermsChosen')" title="Add">&rsaquo;</button>
+                  <button type="button" onclick="moveSel('usrPermsChosen','usrPermsAvail')" title="Remove">&lsaquo;</button>
+                </div>
+                <div>
+                  <div class="selhead">Chosen permissions</div>
+                  <select multiple id="usrPermsChosen" ondblclick="moveSel('usrPermsChosen','usrPermsAvail')"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Important dates</div>
+          <div class="fs-body">
+            <div class="formrow-inline" style="border-bottom:none;">
+              <div class="formrow"><label>Last login</label><div class="readonly" id="usrLastLogin"></div></div>
+              <div class="formrow"><label>Date joined</label><div class="readonly" id="usrJoined"></div></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="submitrow">
+          <button class="btn primary" onclick="saveUser()">Save</button>
+          <button class="btn" onclick="saveUser()">Save and continue editing</button>
+          <span style="flex:1;"></span>
+          <button class="btn danger" onclick="deactivateUser()">Deactivate</button>
+          <button class="btn danger" onclick="deleteUser()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ GROUPS — CHANGELIST ============ -->
+    <div class="view" id="view-groups-list">
+      <div class="pagehead">
+        <div><h1>Select group to change</h1><div class="sub">A group is a named bundle of permissions. Assign people to groups instead of granting permissions one by one.</div></div>
+        <button class="objtool" onclick="openGroup(-1)">Create group</button>
+      </div>
+      <table class="changelist" id="tbl-groups">
+        <tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th class="ctr">PERMISSIONS</th><th class="ctr">USERS</th><th>DESCRIPTION</th></tr>
+      </table>
+      <div class="paginfo" id="groupCount"></div>
+    </div>
+
+    <!-- ============ GROUP — DETAIL ============ -->
+    <div class="view" id="view-group-detail">
+      <div class="pagehead"><div><h1 id="grpTitle">Change group</h1><div class="sub" id="grpSub"></div></div></div>
+      <div class="panel">
+        <fieldset class="fs">
+          <div class="fs-h">Group</div>
+          <div class="fs-body">
+            <div class="formrow"><label for="grpName">Name</label><input type="text" id="grpName"><div class="help">Unique. Shown on the user form.</div></div>
+            <div class="formrow"><label for="grpDesc">Description</label><textarea id="grpDesc"></textarea><div class="help">Internal note. Explain who belongs in this group.</div></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Permissions</div>
+          <div class="fs-body">
+            <div class="selector">
+              <div>
+                <div class="selhead">Available permissions</div>
+                <select multiple id="grpPermsAvail" ondblclick="moveSel('grpPermsAvail','grpPermsChosen')"></select>
+              </div>
+              <div class="arrows">
+                <button type="button" onclick="moveSel('grpPermsAvail','grpPermsChosen')" title="Add">&rsaquo;</button>
+                <button type="button" onclick="moveSel('grpPermsChosen','grpPermsAvail')" title="Remove">&lsaquo;</button>
+              </div>
+              <div>
+                <div class="selhead">Chosen permissions</div>
+                <select multiple id="grpPermsChosen" ondblclick="moveSel('grpPermsChosen','grpPermsAvail')"></select>
+              </div>
+            </div>
+            <div class="help" style="margin-top:8px;">Hold Ctrl or Cmd to pick several at once. Double-click moves one item.</div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Members</div>
+          <div class="fs-body">
+            <table class="changelist" id="tbl-group-members">
+              <tr><th>USERNAME</th><th>EMAIL</th><th>DEPARTMENT</th><th>GROUPS</th></tr>
+            </table>
+            <div class="help" style="margin-top:8px;">Membership is edited on each user form.</div>
+          </div>
+        </fieldset>
+
+        <div class="submitrow">
+          <button class="btn primary" onclick="saveGroup()">Save</button>
+          <button class="btn" onclick="go('groups-list')">Back to groups</button>
+          <span style="flex:1;"></span>
+          <button class="btn danger" onclick="deleteGroup()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ USER PERMISSIONS — CHANGELIST ============ -->
+    <div class="view active" id="view-userperm-list">
+      <div class="pagehead">
+        <div><h1>Select User Permission to change</h1></div>
+        <button class="objtool" onclick="go('userperm-detail')">Create permission record</button>
+      </div>
+      <div class="toolbar">
+        <input type="text" placeholder="Search">
+        <button class="search">Search</button>
+      </div>
+      <table class="changelist" id="tbl-userperm">
+        <tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th>SSO EMAIL</th><th>DEPARTMENT</th><th>ROLE</th><th>ACCESSIBLE DATA</th><th>UPDATED</th></tr>
+      </table>
+      <div class="actionbar">
+        Action: <select><option>---------</option><option>Delete selected user permissions</option><option>Disable PII access</option></select>
+        <button>Go</button> <span id="upSelCount">0 of 7 selected</span>
+      </div>
+      <div class="paginfo">7 user permissions</div>
+    </div>
+
+    <!-- ============ USER PERMISSION — CHANGE FORM ============ -->
+    <div class="view" id="view-userperm-detail">
+      <div class="pagehead">
+        <div><h1 id="upTitle">Change user permission</h1><div class="sub" id="upSub"></div></div>
+      </div>
+      <div class="panel">
+        <fieldset class="fs">
+          <div class="fs-h">Basic information</div>
+          <div class="fs-body">
+            <div class="formrow-inline">
+              <div class="formrow"><label>Full name</label><input type="text" id="upName" value=""></div>
+              <div class="formrow"><label>SSO email</label><input type="text" id="upEmail" value=""></div>
+            </div>
+            <div class="formrow-inline">
+              <div class="formrow"><label>Department</label><input type="text" id="upDept" value=""></div>
+              <div class="formrow narrow"><label>Role</label>
+                <select id="upRole" onchange="updateRoleHint()">
+                  <option>Admin</option><option>Developer</option><option>General User</option><option>Audit User</option>
+                </select>
+              </div>
+            </div>
+            <div class="help" id="upRoleHint" style="margin-top:8px;max-width:640px;"></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Accessible data</div>
+          <div class="fs-body">
+            <p class="fs-d">Datasets and modules this user can query, prompt, or export.</p>
+            <div class="checkgrid" id="upDataGrid"></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">PII access</div>
+          <div class="fs-body">
+            <div class="checkitem"><input type="checkbox" id="upPii"><div><div class="ct">Enable PII access</div><div class="cd">Allows prompts that may retrieve personally identifiable information.</div></div></div>
+          </div>
+        </fieldset>
+
+        <div class="submitrow">
+          <button class="btn primary" onclick="saveUserPerm()">Save</button>
+          <button class="btn" onclick="go('userperm-list')">Save and continue editing</button>
+          <span style="flex:1;"></span>
+          <button class="btn danger">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ DSPY CONFIGS — CHANGELIST ============ -->
+    <div class="view" id="view-dspy-list">
+      <div class="pagehead">
+        <div><h1>Select dspy config to change</h1></div>
+        <button class="objtool" onclick="go('dspy-detail')">Create Dspy config</button>
+      </div>
+      <div class="toolbar">
+        <input type="text" placeholder="Search">
+        <button class="search">Search</button>
+      </div>
+      <table class="changelist" id="tbl-dspy">
+        <tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th>TEMPERATURE</th><th>MAX TOKENS</th><th>UPDATED AT</th></tr>
+      </table>
+      <div class="actionbar">
+        Action: <select><option>---------</option><option>Delete selected dspy configs</option></select>
+        <button>Go</button> <span>0 of 6 selected</span>
+      </div>
+      <div class="paginfo">6 dspy configs</div>
+    </div>
+
+    <!-- ============ DSPY CONFIG — CHANGE FORM (AI Agent Configuration) ============ -->
+    <div class="view" id="view-dspy-detail">
+      <div class="pagehead">
+        <div><h1 id="dspyTitle">AI Agent Configuration</h1><div class="sub" id="dspySub"></div></div>
+      </div>
+      <div class="panel">
+        <fieldset class="fs">
+          <div class="fs-h">Foundation model settings</div>
+          <div class="fs-body">
+            <div class="formrow-inline">
+              <div class="formrow"><label>Primary model</label>
+                <select><option>Llama 3 (On-Premise)</option><option>GPT-4o</option><option>Claude Sonnet</option></select>
+              </div>
+              <div class="formrow"><label>Agent persona</label>
+                <select>
+                  <option>Standard Assistant (Polite)</option>
+                  <option>Compliance Officer (Strict)</option>
+                  <option>Data Analyst (Analytical)</option>
+                  <option>Custom Persona</option>
+                </select>
+              </div>
+              <div class="formrow narrow"><label>Temperature (creativity)</label><input type="number" step="0.1" value="0.3"></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Agent tools &amp; data sources</div>
+          <div class="fs-body">
+            <div class="checkgrid">
+              <div class="checkitem"><input type="checkbox" checked><div><div class="ct">Vector Knowledge Base (RAG)</div><div class="cd">Search legal PDFs, regulations, and manuals</div></div></div>
+              <div class="checkitem"><input type="checkbox" checked><div><div class="ct">SQL: การจัดเก็บรายได้ (Revenue)</div><div class="cd">Text-to-SQL for revenue collection &amp; tax rates</div></div></div>
+              <div class="checkitem"><input type="checkbox" checked><div><div class="ct">SQL: การปราบปราม (Enforcement)</div><div class="cd">Text-to-SQL for enforcement, arrests &amp; lawsuits</div></div></div>
+              <div class="checkitem"><input type="checkbox" checked><div><div class="ct">SQL: การตรวจสอบภาษี (Tax Audit)</div><div class="cd">Text-to-SQL for audit logs &amp; payment anomalies</div></div></div>
+              <div class="checkitem"><input type="checkbox" checked><div><div class="ct">SQL: กฎหมาย (Legal)</div><div class="cd">Text-to-SQL for legal fines &amp; excise decrees</div></div></div>
+              <div class="checkitem"><input type="checkbox" checked><div><div class="ct">SQL: การบริการ (Services)</div><div class="cd">Text-to-SQL for e-services, forms &amp; portals</div></div></div>
+              <div class="checkitem"><input type="checkbox"><div><div class="ct">Social Media API Scraper</div><div class="cd">Live data retrieval for enforcement &amp; suspects</div></div></div>
+              <div class="checkitem"><input type="checkbox" checked><div><div class="ct">Excise Tax Calculator API</div><div class="cd">Function calling for precise excise duty computations</div></div></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">System prompt override</div>
+          <div class="fs-body">
+            <div class="formrow" style="border-bottom:none;">
+              <textarea>You are a highly secure, accurate AI Assistant for the Thai Excise Department. Answer solely based on provided RAG contexts. Decline questions outside the 5 specific domains.</textarea>
+              <div class="help">Overrides the default system prompt for this agent persona.</div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Data sandbox</div>
+          <div class="fs-body">
+            <div class="checkitem"><input type="checkbox" id="dspySandbox"><div><div class="ct">Run against sandbox data</div><div class="cd">Test config changes against sample data without affecting the production knowledge base.</div></div></div>
+          </div>
+        </fieldset>
+
+        <div class="submitrow">
+          <button class="btn primary" onclick="saveConfig()">Save configuration</button>
+          <button class="btn" onclick="go('dspy-list')">Save and continue editing</button>
+          <span style="flex:1;"></span>
+          <button class="btn danger">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ API KEYS — CHANGELIST ============ -->
+    <div class="view" id="view-apikeys-list">
+      <div class="pagehead">
+        <div><h1>Select API key to change</h1><div class="sub">Credentials used by external clients calling <code>/v1/chat/completions</code>. The raw key is shown once at creation and never stored.</div></div>
+        <button class="objtool" onclick="newApiKey()">Create API key</button>
+      </div>
+      <div class="toolbar">
+        <input type="text" placeholder="Search by name or key prefix...">
+        <select id="keyTierFilter" onchange="renderApiKeys()">
+          <option value="">All tiers</option><option>free</option><option>standard</option><option>enterprise</option>
+        </select>
+        <select id="keyStatusFilter" onchange="renderApiKeys()">
+          <option value="">All statuses</option><option value="active">Active</option><option value="revoked">Revoked</option>
+        </select>
+        <button class="search">Search</button>
+      </div>
+      <table class="changelist" id="tbl-apikeys">
+        <tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th>KEY PREFIX</th><th>TIER</th><th>ALLOWED AGENTS</th><th>STATUS</th><th>LAST USED</th><th>CREATED</th><th>ACTIONS</th></tr>
+      </table>
+      <div class="actionbar">
+        <span>Action:</span>
+        <select id="keyBulkAction">
+          <option>Revoke selected API keys</option>
+          <option>Move selected keys to tier: free</option>
+        </select>
+        <button onclick="runBulk('keyBulkAction','API keys')">Go</button>
+        <span id="apikeyCount" class="paginfo" style="padding:0;"></span>
+      </div>
+    </div>
+
+    <!-- ============ API KEY — DETAIL ============ -->
+    <div class="view" id="view-apikey-detail">
+      <div class="pagehead"><div><h1 id="keyTitle">Change API key</h1><div class="sub" id="keySub"></div></div></div>
+
+      <div class="reveal" id="keyReveal">
+        <div class="reveal-h">Copy this key now. It is not shown again.</div>
+        <div class="reveal-body">
+          <code id="keyRaw">sk-live-9f2c41d0a7b34e5f8c16d9024ab7e531</code>
+          <button class="btn" onclick="showToast('API key copied to clipboard.')">Copy</button>
+        </div>
+        <div class="reveal-note">Only the prefix and a hash are written to the database. Lose the key and you must issue a new one.</div>
+      </div>
+
+      <div class="panel">
+        <fieldset class="fs">
+          <div class="fs-h">Identity</div>
+          <div class="fs-body">
+            <div class="formrow">
+              <label for="keyName">Name</label>
+              <input type="text" id="keyName" value="">
+              <div class="help">Label shown in logs and audit records, for example "Internal Sales Dashboard".</div>
+            </div>
+            <div class="formrow-inline" style="padding-top:9px;">
+              <div class="formrow"><label>Key prefix</label><div class="readonly" id="keyPrefix">sk-ab12c3d4</div><div class="help">First 8 characters. Read only.</div></div>
+              <div class="formrow"><label>Key hash</label><div class="readonly">bcrypt, 60 chars, unique</div><div class="help">The raw key is never stored.</div></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Rate limit tier</div>
+          <div class="fs-body">
+            <p class="fs-d">The tier sets requests per minute and tokens per minute. Counters run in Redis; the tier only holds the limits.</p>
+            <div class="formrow" style="border-bottom:none;">
+              <label for="keyTier">Tier</label>
+              <select id="keyTier" onchange="updateTierHint()"></select>
+              <div class="help" id="keyTierHint"></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Allowed agents</div>
+          <div class="fs-body">
+            <p class="fs-d">DSPy modules this key may call. The <code>model</code> field of a request must match one of them, or the API returns 403 <code>model_not_allowed</code>. <code>GET /v1/models</code> returns exactly this list.</p>
+            <div class="checkgrid" id="keyAgentGrid"></div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fs">
+          <div class="fs-h">Status</div>
+          <div class="fs-body">
+            <div class="checkitem" style="border-bottom:none;">
+              <input type="checkbox" id="keyActive" checked>
+              <div><div class="ct">Key is active</div><div class="cd">Clear this box to revoke. Revoked keys return 401 <code>invalid_api_key</code>. Revoke instead of deleting, so request logs keep their owner.</div></div>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="submitrow">
+          <button class="btn primary" onclick="saveApiKey()">Save</button>
+          <button class="btn" onclick="saveApiKey()">Save and continue editing</button>
+          <span style="flex:1;"></span>
+          <button class="btn danger" onclick="revokeApiKey()">Revoke key</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <div class="view" id="view-dashboard">
+      <div class="pagehead">
+        <div class="titlewrap">
+          <h1>การใช้งาน AI Agent</h1>
+          <span class="tierchip"><i></i>ระบบภายใน</span>
+        </div>
+        <button class="objtool" onclick="showToast('กำลังสร้างไฟล์รายงาน')">Export</button>
+      </div>
+
+      <div class="filterbar">
+        <label for="fUnit">หน่วยงาน</label>
+        <div class="selectwrap">
+          <select id="fUnit" onchange="renderDashboard()">
+            <option value="">ทุกหน่วยงาน</option>
+            <option>กลุ่มตรวจสอบภายใน</option>
+            <option>สำนักงานเลขานุการกรม</option>
+            <option>สำนักบริหารการคลังและรายได้</option>
+            <option>สำนักบริหารทรัพยากรบุคคล</option>
+            <option>ศูนย์เทคโนโลยีสารสนเทศ</option>
+          </select>
+        </div>
+        <label for="fRange">ช่วงเวลา</label>
+        <div class="selectwrap">
+          <select id="fRange" onchange="renderDashboard()">
+            <option value="1">24 ชั่วโมง</option>
+            <option value="7">7 วัน</option>
+            <option value="28" selected>28 วัน</option>
+            <option value="90">90 วัน</option>
+            <option value="365">12 เดือน</option>
+            <option value="custom">กำหนดเอง</option>
+          </select>
+        </div>
+        <div class="daterange" id="dateRange" style="display:none;">
+          <input type="date" id="fFrom" value="2026-05-22" onchange="renderDashboard()">
+          <span class="rangesep">ถึง</span>
+          <input type="date" id="fTo" value="2026-06-18" onchange="renderDashboard()">
+        </div>
+        <span class="filternote" id="rangeNote"></span>
+      </div>
+
+      <div class="secthead">ภาพรวม <span class="info" title="ประมวลผลจาก Audit Logs และ System Logs ทุก 30 นาที">i</span></div>
+
+      <div class="statgrid" id="statGrid"></div>
+
+      <div class="secthead">การใช้งานรายสายงาน <span class="info" title="นับตามสายงานที่ระบบจัดเส้นทางคำถามไป">i</span></div>
+
+      <div class="dashgrid">
+        <div class="card">
+          <div class="card-h">
+            <div class="card-t">ปริมาณการเรียกใช้แยกตามสายงาน</div>
+            <div class="segmented" id="dashMetric">
+              <button class="on" onclick="setMetric(this,'calls')">จำนวนครั้ง</button>
+              <button onclick="setMetric(this,'tokens')">Token</button>
+            </div>
+          </div>
+          <div class="card-b"><div id="barChart"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><div class="card-t">ผลตอบรับจากผู้ใช้งาน</div></div>
+          <div class="card-b">
+            <div id="donut"></div>
+            <div class="legend">
+              <div><span class="dot sq" style="background:var(--chart-1)"></span>พึงพอใจ<b id="satA">21%</b></div>
+              <div><span class="dot sq" style="background:var(--chart-3)"></span>ไม่พึงพอใจ<b id="satB">7%</b></div>
+              <div><span class="dot sq" style="background:var(--chart-muted)"></span>ไม่ให้คะแนน<b id="satC">72%</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="secthead">รายละเอียด <span class="info" title="ข้อมูลระดับหน่วยงานและบันทึกการใช้งานรายคำถาม">i</span></div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-h">
+          <div class="card-t">การใช้งานแยกตามหน่วยงาน</div>
+          <button class="objtool sm" onclick="showToast('กำลังส่งออกไฟล์ CSV')">Export CSV</button>
+        </div>
+        <table class="changelist flat" id="tbl-units"></table>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="card-t">บันทึกการใช้งานล่าสุด</div>
+          <input type="text" class="minisearch" id="dashLogSearch" placeholder="ค้นหาบันทึก" oninput="renderDashLogs()">
+        </div>
+        <table class="changelist flat" id="tbl-dashlogs"></table>
+        <div class="card-f">
+          <span id="dashLogCount"></span>
+          <div class="pager"><button disabled>ก่อนหน้า</button><button class="on">1</button><button disabled>ถัดไป</button></div>
+        </div>
+      </div>
+
+      <div class="footnote">ประมวลผลอัตโนมัติทุก 30 นาที · ใช้เพื่อการบริหารจัดการภายในเท่านั้น</div>
+    </div>
+
+    <!-- ============ AUDIT LOGS ============ -->
+    <div class="view" id="view-auditlogs">
+      <div class="pagehead">
+        <div><h1>Select audit log to view</h1><div class="sub">Automatic record of every permission, config, and query change — for PDPA auditability.</div></div>
+        <button class="objtool" onclick="showToast('CSV export started.')">Export CSV</button>
+      </div>
+      <div class="toolbar">
+        <input type="text" placeholder="Search audit logs...">
+        <select style="padding:6px 9px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+          <option>All modules</option><option>Role</option><option>Granular Access</option><option>PII</option><option>AI Config</option><option>Query</option>
+        </select>
+        <button class="search">Search</button>
+      </div>
+      <table class="changelist" id="tbl-audit">
+        <tr><th>TIMESTAMP</th><th>ACTION</th><th>MODULE</th><th>TARGET USER</th><th>CHANGED BY</th><th>STATUS</th></tr>
+      </table>
+      <div class="paginfo">8 audit logs</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modalback" id="modalBack" onclick="if(event.target===this)closeConfirm()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-t" id="modalTitle"></div>
+    <div class="modal-b" id="modalBody"></div>
+    <div class="modal-f">
+      <button class="btn" onclick="closeConfirm()">Cancel</button>
+      <button class="btn primary" id="modalOk" onclick="acceptConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:26px;right:26px;background:#ffffff;color:#15803d;border:1px solid #cfe3d6;padding:13px 22px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(15,23,42,.14);transform:translateY(20px);opacity:0;pointer-events:none;transition:.2s;z-index:100;">
+  <span id="toastMsg">Saved successfully.</span>
+</div>
+
+<script>
+// ---------- Mock data ----------
+const USERPERMS = [
+  {name:'ปีติ คงพันธ์', email:'piti.k@excise.go.th', dept:'ปราบปราม', role:'General User', data:['ปราบปราม','ตรวจสอบ'], pii:false, updated:'June 22, 2026'},
+  {name:'วนิดา ทิพย์รักษ์', email:'wanida.p@excise.go.th', dept:'กฎหมาย', role:'General User', data:['กฎหมาย','บริการ'], pii:false, updated:'June 22, 2026'},
+  {name:'วิไลลักษณ์ สมบูรณ์', email:'wilailuck.x@excise.go.th', dept:'ด่านศุลกากร', role:'Audit User', data:['ราชการภาษีตรวจสอบทั้งหมด'], pii:false, updated:'June 22, 2026'},
+  {name:'สมชาย จันเจียม', email:'somchai.k@excise.go.th', dept:'กลุ่ม IT', role:'Admin', data:['ข้อมูลทั้งหมด'], pii:true, updated:'June 22, 2026'},
+  {name:'ธนวัฒน์ มีทรัพย์', email:'thanawat.m@excise.go.th', dept:'Data Science', role:'Developer', data:['ข้อมูลทั้งหมด (sandbox)'], pii:false, updated:'June 22, 2026'},
+  {name:'นารี สุวรรณ', email:'naree.s@excise.go.th', dept:'วิเคราะห์รายได้', role:'General User', data:['รายได้','ตรวจสอบ','กฎหมาย'], pii:false, updated:'June 22, 2026'},
+  {name:'ปริญญา ภูริพัทร', email:'parinya.s@excise.go.th', dept:'กลุ่ม IT', role:'Admin', data:['ข้อมูลทั้งหมด'], pii:true, updated:'June 22, 2026'},
+];
+
+const DSPY = [
+  {name:'general-agent', temp:'0.7', tokens:'1024', updated:'June 22, 2026, 8:42 a.m.'},
+  {name:'law-agent', temp:'0.7', tokens:'1024', updated:'June 22, 2026, 10:23 a.m.'},
+  {name:'revenue-agent', temp:'0.9', tokens:'1024', updated:'June 22, 2026, 8:38 a.m.'},
+  {name:'service-agent', temp:'0.7', tokens:'1024', updated:'June 22, 2026, 10:23 a.m.'},
+  {name:'suppression-agent', temp:'0.3', tokens:'1024', updated:'June 22, 2026, 10:22 a.m.'},
+  {name:'tax-verification-agent', temp:'0.6', tokens:'1024', updated:'June 22, 2026, 10:23 a.m.'},
+];
+
+const AUDIT = [
+  {ts:'2026-09-14 14:20:11', action:'PII access enabled', mod:'PII', target:'somchai.k@excise.go.th', by:'admin01', status:'Success'},
+  {ts:'2026-09-14 14:10:03', action:'Granular access granted — ปราบปราม', mod:'Granular Access', target:'piti.k@excise.go.th', by:'admin01', status:'Success'},
+  {ts:'2026-09-13 16:30:45', action:'Role changed — Developer → General User', mod:'Role', target:'thanawat.m@excise.go.th', by:'admin01', status:'Success'},
+  {ts:'2026-09-13 11:05:22', action:'AI Agent config updated — temperature 0.7 → 0.9', mod:'AI Config', target:'revenue-agent', by:'admin02', status:'Success'},
+  {ts:'2026-09-12 09:41:07', action:'System prompt override changed', mod:'AI Config', target:'tax-verification-agent', by:'admin01', status:'Success'},
+  {ts:'2026-09-11 15:12:30', action:'Granular access revoked — ข้อมูลทั้งหมด', mod:'Granular Access', target:'naree.s@excise.go.th', by:'admin02', status:'Success'},
+  {ts:'2026-09-10 10:02:18', action:'Query — "Analyze price structure anomalies for Wine Co."', mod:'Query', target:'wipa.c@excise.go.th', by:'—', status:'Success'},
+  {ts:'2026-09-02 11:05:00', action:'Export access revoked', mod:'Granular Access', target:'wanida.p@excise.go.th', by:'admin02', status:'Success'},
+];
+
+const ROLE_HINTS = {
+  'Admin':'เข้าสู่ระบบหลังบ้านผ่าน SSO เพื่อบริหารจัดการผู้ใช้งาน กำหนดบทบาท กำหนดสิทธิ์ Granular Access เปิด/ปิด PII Access ปรับแก้ Configuration ของ AI Agent และดู Audit Logs',
+  'Developer':'เข้าถึง API Documentation เพื่อเชื่อมต่อระบบภายนอกกับ AI Agent Backend ผ่าน REST API — ส่ง HTTP Request พร้อม Auth Token และรับคำตอบกลับเป็น JSON',
+  'General User':'เข้าใช้งาน Chat Interface เพื่อส่ง Prompt ค้นหาข้อมูล สรุปเอกสาร หรือขอคำตอบจากผู้ช่วยเสมือนใน 5 โดเมนหลักของกรมสรรพสามิต',
+  'Audit User':'เข้าถึงฟังก์ชันเชิงลึกของโดเมนการตรวจสอบภาษี เช่น วิเคราะห์โครงสร้างราคาสินค้า ตรวจสอบความผิดปกติในการยื่นภาษี และตรวจสอบการชำระภาษีล่าช้าพร้อมคำแนะนำตามกฎหมาย',
+};
+
+function updateRoleHint(){
+  document.getElementById('upRoleHint').textContent = ROLE_HINTS[document.getElementById('upRole').value] || '';
+}
+
+function renderAudit(){
+  const t = document.getElementById('tbl-audit');
+  t.innerHTML = '<tr><th>TIMESTAMP</th><th>ACTION</th><th>MODULE</th><th>TARGET USER</th><th>CHANGED BY</th><th>STATUS</th></tr>';
+  AUDIT.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.ts}</td><td>${r.action}</td><td><span class="badge">${r.mod}</span></td><td>${r.target}</td><td>${r.by}</td><td style="color:#1e6b3e;font-weight:600;">${r.status}</td>`;
+    t.appendChild(tr);
+  });
+}
+
+const DATA_CATEGORIES = ['ปราบปราม','ตรวจสอบ','กฎหมาย','บริการ','รายได้','ข้อมูลทั้งหมด','ด่านศุลกากร'];
+
+function renderUserPerms(){
+  const t = document.getElementById('tbl-userperm');
+  t.innerHTML = '<tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th>SSO EMAIL</th><th>DEPARTMENT</th><th>ROLE</th><th>ACCESSIBLE DATA</th><th>UPDATED</th></tr>';
+  USERPERMS.forEach((r,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="ctr"><input type="checkbox"></td>
+      <td><a class="objname" href="#" onclick="openUserPerm(${i});return false;">${r.name}</a></td>
+      <td>${r.email}</td><td>${r.dept}</td><td>${r.role}</td>
+      <td>${r.data.map(d=>'<span class="badge">'+d+'</span>').join(' ')}</td>
+      <td>${r.updated}</td>`;
+    t.appendChild(tr);
+  });
+}
+
+function renderDspy(){
+  const t = document.getElementById('tbl-dspy');
+  t.innerHTML = '<tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th>TEMPERATURE</th><th>MAX TOKENS</th><th>UPDATED AT</th></tr>';
+  DSPY.forEach((r,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="ctr"><input type="checkbox"></td>
+      <td><a class="objname" href="#" onclick="go('dspy-detail');document.getElementById('dspyTitle').textContent='${r.name}';document.getElementById('dspySub').textContent='Dspy config · updated ${r.updated}';return false;">${r.name}</a></td>
+      <td>${r.temp}</td><td>${r.tokens}</td><td>${r.updated}</td>`;
+    t.appendChild(tr);
+  });
+}
+
+function openUserPerm(i){
+  const r = USERPERMS[i];
+  document.getElementById('upTitle').textContent = 'Change user permission';
+  document.getElementById('upSub').textContent = r.email + ' · updated ' + r.updated;
+  document.getElementById('upName').value = r.name;
+  document.getElementById('upEmail').value = r.email;
+  document.getElementById('upDept').value = r.dept;
+  document.getElementById('upRole').value = r.role;
+  document.getElementById('upPii').checked = r.pii;
+  updateRoleHint();
+  const grid = document.getElementById('upDataGrid');
+  grid.innerHTML = '';
+  DATA_CATEGORIES.forEach(cat=>{
+    const on = r.data.some(d=>cat.includes(d) || d.includes(cat));
+    const div = document.createElement('div');
+    div.className = 'checkitem';
+    div.innerHTML = `<input type="checkbox" ${on?'checked':''}><div><div class="ct">${cat}</div></div>`;
+    grid.appendChild(div);
+  });
+  go('userperm-detail');
+}
+
+function saveUserPerm(){
+  askConfirm({
+    title:'Save these data permissions?',
+    body:'Changes to data scope and PII access take effect on the next sign-in of this account.',
+    ok:'Save changes',
+    onOk:()=>{ showToast('Permission updated successfully.'); go('userperm-list'); }
+  });
+}
+function saveConfig(){
+  askConfirm({
+    title:'Save this configuration?',
+    body:'The updated module settings apply to every request routed to this agent from now on.',
+    ok:'Save changes',
+    onOk:()=>{ showToast('Configuration saved.'); go('dspy-list'); }
+  });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.style.opacity = 1; t.style.transform = 'translateY(0)';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(()=>{t.style.opacity=0;t.style.transform='translateY(20px);'}, 3000);
+}
+
+// ---------- API mock data (per Chat Agent API spec) ----------
+const TIERS = [
+  {name:'free', rpm:60, tpm:100000, desc:'60 RPM, 100K TPM. Pilots and internal tools.'},
+  {name:'standard', rpm:600, tpm:1000000, desc:'600 RPM, 1M TPM. Departmental production systems.'},
+  {name:'enterprise', rpm:3000, tpm:5000000, desc:'3000 RPM, 5M TPM. Cross-agency integrations.'},
+];
+
+const APIKEYS = [
+  {name:'Internal Revenue Dashboard', prefix:'sk-ab12c3d4', tier:'standard', agents:['revenue-agent','tax-verification-agent'], active:true, used:'Sept. 14, 2026, 2:18 p.m.', created:'June 22, 2026'},
+  {name:'Enforcement Case Tool', prefix:'sk-7f31e0a9', tier:'standard', agents:['suppression-agent','law-agent'], active:true, used:'Sept. 14, 2026, 1:02 p.m.', created:'June 22, 2026'},
+  {name:'e-Service Portal', prefix:'sk-c4d5e6f7', tier:'free', agents:['service-agent','general-agent'], active:true, used:'Sept. 13, 2026, 9:44 a.m.', created:'July 4, 2026'},
+  {name:'Data Science Sandbox', prefix:'sk-90ab12cd', tier:'free', agents:['general-agent'], active:true, used:'Sept. 10, 2026, 4:55 p.m.', created:'Aug. 1, 2026'},
+  {name:'Legacy Partner Gateway', prefix:'sk-5e6f7a8b', tier:'enterprise', agents:['law-agent'], active:false, used:'Aug. 29, 2026, 11:30 a.m.', created:'Feb. 9, 2026'},
+];
+
+const AGENT_NAMES = DSPY.map(d=>d.name);
+let currentKey = -1, currentTier = -1;
+
+function tierByName(n){ return TIERS.find(t=>t.name===n); }
+function keysOnTier(n){ return APIKEYS.filter(k=>k.tier===n).length; }
+
+function renderApiKeys(){
+  const t = document.getElementById('tbl-apikeys');
+  const ft = document.getElementById('keyTierFilter').value;
+  const fs = document.getElementById('keyStatusFilter').value;
+  t.innerHTML = '<tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th>KEY PREFIX</th><th>TIER</th><th>ALLOWED AGENTS</th><th>STATUS</th><th>LAST USED</th><th>CREATED</th><th>ACTIONS</th></tr>';
+  let shown = 0;
+  APIKEYS.forEach((k,i)=>{
+    if(ft && k.tier!==ft) return;
+    if(fs==='active' && !k.active) return;
+    if(fs==='revoked' && k.active) return;
+    shown++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="ctr"><input type="checkbox"></td>
+      <td><a class="objname" href="#" onclick="openApiKey(${i});return false;">${k.name}</a></td>
+      <td><code>${k.prefix}...</code></td>
+      <td><span class="badge">${k.tier}</span></td>
+      <td>${k.agents.map(a=>'<span class="badge mono">'+a+'</span>').join(' ')}</td>
+      <td>${k.active ? '<span class="badge ok">Active</span>' : '<span class="badge off">Revoked</span>'}</td>
+      <td>${k.used}</td><td>${k.created}</td>
+      <td><a class="iconbtn" href="#" onclick="openApiKey(${i});return false;" title="Edit">&#9998;</a></td>`;
+    t.appendChild(tr);
+  });
+  document.getElementById('apikeyCount').textContent = shown + ' of ' + APIKEYS.length + ' API keys';
+}
+
+function fillTierSelect(sel){
+  sel.innerHTML = TIERS.map(t=>'<option>'+t.name+'</option>').join('');
+}
+
+function updateTierHint(){
+  const t = tierByName(document.getElementById('keyTier').value);
+  document.getElementById('keyTierHint').textContent = t ? t.rpm + ' requests per minute, ' + t.tpm.toLocaleString() + ' tokens per minute. ' + t.desc : '';
+}
+
+function buildAgentGrid(selected){
+  const grid = document.getElementById('keyAgentGrid');
+  grid.innerHTML = '';
+  AGENT_NAMES.forEach(a=>{
+    const div = document.createElement('div');
+    div.className = 'checkitem';
+    div.innerHTML = `<input type="checkbox" ${selected.includes(a)?'checked':''}><div><div class="ct">${a}</div><div class="cd">model: <code>${a}</code></div></div>`;
+    grid.appendChild(div);
+  });
+}
+
+function openApiKey(i){
+  currentKey = i;
+  const k = APIKEYS[i];
+  document.getElementById('keyTitle').textContent = 'Change API key';
+  document.getElementById('keySub').innerHTML = k.prefix + '... &middot; created ' + k.created + ' &middot; last used ' + k.used;
+  document.getElementById('keyReveal').style.display = 'none';
+  document.getElementById('keyName').value = k.name;
+  document.getElementById('keyPrefix').textContent = k.prefix;
+  fillTierSelect(document.getElementById('keyTier'));
+  document.getElementById('keyTier').value = k.tier;
+  updateTierHint();
+  buildAgentGrid(k.agents);
+  document.getElementById('keyActive').checked = k.active;
+  go('apikey-detail');
+}
+
+function newApiKey(){
+  currentKey = -1;
+  document.getElementById('keyTitle').textContent = 'Add API key';
+  document.getElementById('keySub').textContent = 'The raw key is returned once, at creation.';
+  document.getElementById('keyReveal').style.display = 'block';
+  document.getElementById('keyName').value = '';
+  document.getElementById('keyPrefix').textContent = 'sk-9f2c41d0';
+  fillTierSelect(document.getElementById('keyTier'));
+  document.getElementById('keyTier').value = 'free';
+  updateTierHint();
+  buildAgentGrid([]);
+  document.getElementById('keyActive').checked = true;
+  go('apikey-detail');
+}
+
+function saveApiKey(){
+  const name = document.getElementById('keyName').value || '(unnamed key)';
+  const tier = document.getElementById('keyTier').value;
+  const agents = [...document.querySelectorAll('#keyAgentGrid input:checked')].length;
+  askConfirm({
+    title: currentKey === -1 ? 'Create this API key?' : 'Save changes to this key?',
+    body:`<strong>${name}</strong>
+      <ul><li>Tier: ${tier}</li><li>Allowed agents: ${agents}</li></ul>
+      ${currentKey === -1 ? '<p class="warn">The raw key is shown once and cannot be retrieved later.</p>' : ''}`,
+    ok: currentKey === -1 ? 'Create key' : 'Save changes',
+    onOk:()=>{
+      showToast(currentKey === -1 ? 'API key created.' : 'API key saved.');
+      go('apikeys-list');
+    }
+  });
+}
+
+function revokeApiKey(){
+  const name = document.getElementById('keyName').value;
+  askConfirm({
+    title:'Revoke this API key?',
+    body:`Any client using <strong>${name}</strong> starts receiving 401 <code>invalid_api_key</code> immediately. The record stays so past requests keep their owner.`,
+    ok:'Revoke key', danger:true,
+    onOk:()=>{
+      if(currentKey > -1){ APIKEYS[currentKey].active = false; renderApiKeys(); }
+      showToast('API key revoked.');
+      go('apikeys-list');
+    }
+  });
+}
+
+// ---------- Auth: users, groups, permissions ----------
+const PERMISSIONS = [
+  'auth | group | Can add group', 'auth | group | Can change group', 'auth | group | Can delete group', 'auth | group | Can view group',
+  'auth | user | Can add user', 'auth | user | Can change user', 'auth | user | Can delete user', 'auth | user | Can view user',
+  'auth | user permission | Can change user permission', 'auth | user permission | Can view user permission',
+  'config_app | dspy config | Can change dspy config', 'config_app | dspy config | Can view dspy config',
+  'api_app | api key | Can add api key', 'api_app | api key | Can change api key', 'api_app | api key | Can revoke api key', 'api_app | api key | Can view api key',
+  'api_app | rate limit tier | Can add rate limit tier', 'api_app | rate limit tier | Can change rate limit tier', 'api_app | rate limit tier | Can view rate limit tier',
+  'api_app | request log | Can view request log', 'api_app | request log | Can export request log',
+  'monitoring_app | audit log | Can view audit log', 'monitoring_app | audit log | Can export audit log',
+];
+
+const GROUPS = [
+  {name:'Administrators', desc:'Full back-office control: users, groups, API keys, tiers, configuration.',
+   perms:PERMISSIONS.filter(p=>!p.includes('Can delete user'))},
+  {name:'Developers', desc:'Issue and rotate API keys, read request logs, tune DSPy configs. No access to user records.',
+   perms:['api_app | api key | Can add api key','api_app | api key | Can change api key','api_app | api key | Can revoke api key','api_app | api key | Can view api key','api_app | rate limit tier | Can view rate limit tier','api_app | request log | Can view request log','config_app | dspy config | Can change dspy config','config_app | dspy config | Can view dspy config']},
+  {name:'Auditors', desc:'Read-only across logs and permissions, for PDPA review.',
+   perms:['monitoring_app | audit log | Can view audit log','monitoring_app | audit log | Can export audit log','api_app | request log | Can view request log','api_app | request log | Can export request log','auth | user permission | Can view user permission','auth | user | Can view user']},
+  {name:'Analysts', desc:'Chat access plus read-only view of DSPy configs. Default group for general users.',
+   perms:['config_app | dspy config | Can view dspy config']},
+];
+
+const USERS = [
+  {username:'admin01', first:'สมชาย', lastname:'จันทร์เจียม', email:'somchai.k@excise.go.th', dept:'กลุ่ม IT', groups:['Administrators'], perms:[], active:true, staff:true, superuser:true, lastLogin:'Sept. 14, 2026, 2:31 p.m.', joined:'Jan. 12, 2026'},
+  {username:'admin02', first:'ปริญญา', lastname:'ภูริพัฒน์', email:'parinya.s@excise.go.th', dept:'กลุ่ม IT', groups:['Administrators'], perms:[], active:true, staff:true, superuser:false, lastLogin:'Sept. 14, 2026, 11:07 a.m.', joined:'Jan. 12, 2026'},
+  {username:'thanawat.m', first:'ธนวัฒน์', lastname:'มีทรัพย์เจริญ', email:'thanawat.m@excise.go.th', dept:'Data Science', groups:['Developers'], perms:['api_app | request log | Can export request log'], active:true, staff:true, superuser:false, lastLogin:'Sept. 13, 2026, 4:55 p.m.', joined:'Feb. 3, 2026'},
+  {username:'wilailuck.x', first:'วิไลลักษณ์', lastname:'สมบูรณ์ศักดิ์', email:'wilailuck.x@excise.go.th', dept:'ด่านศุลกากร', groups:['Auditors'], perms:[], active:true, staff:true, superuser:false, lastLogin:'Sept. 12, 2026, 9:20 a.m.', joined:'Feb. 3, 2026'},
+  {username:'naree.s', first:'นารี', lastname:'สุวรรณโรจน์', email:'naree.s@excise.go.th', dept:'วิเคราะห์รายได้', groups:['Analysts'], perms:[], active:true, staff:false, superuser:false, lastLogin:'Sept. 14, 2026, 8:41 a.m.', joined:'March 18, 2026'},
+  {username:'piti.k', first:'ปีติ', lastname:'คงพันธุ์ดี', email:'piti.k@excise.go.th', dept:'ปราบปราม', groups:['Analysts'], perms:[], active:true, staff:false, superuser:false, lastLogin:'Sept. 11, 2026, 3:12 p.m.', joined:'March 18, 2026'},
+  {username:'wanida.p', first:'วนิดา', lastname:'ทิพย์รักษา', email:'wanida.p@excise.go.th', dept:'กฎหมาย', groups:['Analysts'], perms:[], active:false, staff:false, superuser:false, lastLogin:'Aug. 29, 2026, 10:02 a.m.', joined:'March 18, 2026'},
+];
+
+let currentUser = -1, currentGroup = -1;
+
+function usersInGroup(name){ return USERS.filter(u=>u.groups.includes(name)); }
+function yesNo(v){ return v ? '<span class="badge ok">Yes</span>' : '<span class="badge off">No</span>'; }
+
+// --- two-column selector helper (Django filter_horizontal) ---
+function fillSel(id, items){
+  const s = document.getElementById(id);
+  s.innerHTML = items.map(v=>'<option>'+v+'</option>').join('');
+}
+function selValues(id){
+  return [...document.getElementById(id).options].map(o=>o.value || o.textContent);
+}
+function moveSel(fromId, toId){
+  const from = document.getElementById(fromId), to = document.getElementById(toId);
+  [...from.selectedOptions].forEach(o=>{ from.removeChild(o); o.selected = false; to.appendChild(o); });
+  sortSel(to);
+}
+function sortSel(sel){
+  const opts = [...sel.options].sort((a,b)=>a.textContent.localeCompare(b.textContent));
+  sel.innerHTML = '';
+  opts.forEach(o=>sel.appendChild(o));
+}
+
+// --- users ---
+function renderUsers(){
+  const t = document.getElementById('tbl-users');
+  const q = (document.getElementById('userSearch').value || '').toLowerCase();
+  const g = document.getElementById('userGroupFilter').value;
+  const st = document.getElementById('userStatusFilter').value;
+  t.innerHTML = '<tr><th class="ctr"><input type="checkbox"></th><th>USERNAME</th><th>EMAIL ADDRESS</th><th>FIRST NAME</th><th>LAST NAME</th><th>GROUPS</th><th class="ctr">STAFF</th><th>LAST LOGIN</th></tr>';
+  let shown = 0;
+  USERS.forEach((u,i)=>{
+    if(q && !(u.username+u.email+u.first+u.lastname).toLowerCase().includes(q)) return;
+    if(g && !u.groups.includes(g)) return;
+    if(st==='active' && !u.active) return;
+    if(st==='inactive' && u.active) return;
+    if(st==='staff' && !u.staff) return;
+    if(st==='super' && !u.superuser) return;
+    shown++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="ctr"><input type="checkbox"></td>
+      <td><a class="objname" href="#" onclick="openUser(${i});return false;">${u.username}</a>${u.superuser?' <span class="badge warn">superuser</span>':''}</td>
+      <td>${u.email}</td><td>${u.first}</td><td>${u.lastname}</td>
+      <td>${u.groups.map(x=>'<span class="badge">'+x+'</span>').join(' ') || '<span style="color:var(--muted);">—</span>'}</td>
+      <td class="ctr">${yesNo(u.staff)}</td>
+      <td>${u.lastLogin}</td>`;
+    t.appendChild(tr);
+  });
+  document.getElementById('userCount').textContent = shown + ' of ' + USERS.length + ' users';
+}
+
+function fillUserGroupFilter(){
+  const s = document.getElementById('userGroupFilter');
+  s.innerHTML = '<option value="">All groups</option>' + GROUPS.map(g=>'<option>'+g.name+'</option>').join('');
+}
+
+function syncStaffHint(){
+  if(!document.getElementById('usrStaff').checked){
+    document.getElementById('usrSuper').checked = false;
+    syncSuperState();
+  }
+}
+
+function syncSuperState(){
+  const su = document.getElementById('usrSuper').checked;
+  if(su) document.getElementById('usrStaff').checked = true;
+  ['usrPermsAvail','usrPermsChosen'].forEach(id=>{ document.getElementById(id).disabled = su; });
+  document.getElementById('usrPermHelp').textContent = su
+    ? 'Superusers hold every permission implicitly, so this list is ignored.'
+    : 'Permissions granted directly to this user, on top of group permissions.';
+}
+
+function openUser(i){
+  currentUser = i;
+  const u = i > -1 ? USERS[i] : {username:'', first:'', lastname:'', email:'', dept:'', groups:[], perms:[], active:true, staff:false, superuser:false, lastLogin:'—', joined:'—'};
+  document.getElementById('usrTitle').textContent = i > -1 ? 'Change user' : 'Add user';
+  document.getElementById('usrSub').textContent = i > -1 ? u.email + ' · joined ' + u.joined : 'New account. Assign groups after saving the basics.';
+  document.getElementById('usrPwRow').style.display = i > -1 ? 'block' : 'none';
+  document.getElementById('usrPwNewRow').style.display = i > -1 ? 'none' : 'block';
+  document.getElementById('usrPermBtn').style.display = i > -1 ? 'inline-block' : 'none';
+  document.getElementById('usrUsername').value = u.username;
+  document.getElementById('usrFirst').value = u.first;
+  document.getElementById('usrLast').value = u.lastname;
+  document.getElementById('usrEmail').value = u.email;
+  document.getElementById('usrDept').value = u.dept;
+  document.getElementById('usrActive').checked = u.active;
+  document.getElementById('usrStaff').checked = u.staff;
+  document.getElementById('usrSuper').checked = u.superuser;
+  document.getElementById('usrLastLogin').textContent = u.lastLogin;
+  document.getElementById('usrJoined').textContent = u.joined;
+  fillSel('usrGroupsChosen', u.groups);
+  fillSel('usrGroupsAvail', GROUPS.map(g=>g.name).filter(n=>!u.groups.includes(n)));
+  fillSel('usrPermsChosen', u.perms);
+  fillSel('usrPermsAvail', PERMISSIONS.filter(p=>!u.perms.includes(p)));
+  syncSuperState();
+  go('user-detail');
+}
+
+function saveUser(){
+  const name = document.getElementById('usrUsername').value || '(no username)';
+  const groups = selValues('usrGroupsChosen');
+  const perms = selValues('usrPermsChosen');
+  const staff = document.getElementById('usrStaff').checked;
+  const su = document.getElementById('usrSuper').checked;
+  askConfirm({
+    title: currentUser > -1 ? 'Save changes to this user?' : 'Create this user?',
+    body: `Review what will be written for <strong>${name}</strong>:
+      <ul>
+        <li>Groups: ${groups.join(', ') || 'none'}</li>
+        <li>Direct permissions: ${perms.length}</li>
+        <li>Staff access: ${staff ? 'yes' : 'no'}${su ? ' · superuser' : ''}</li>
+      </ul>${su ? '<p class="warn">Superuser grants every permission in the system.</p>' : ''}`,
+    ok: currentUser > -1 ? 'Save changes' : 'Create user',
+    onOk: commitUser,
+  });
+}
+
+function commitUser(){
+  if(currentUser > -1){
+    const u = USERS[currentUser];
+    u.username = document.getElementById('usrUsername').value;
+    u.first = document.getElementById('usrFirst').value;
+    u.lastname = document.getElementById('usrLast').value;
+    u.email = document.getElementById('usrEmail').value;
+    u.dept = document.getElementById('usrDept').value;
+    u.active = document.getElementById('usrActive').checked;
+    u.staff = document.getElementById('usrStaff').checked;
+    u.superuser = document.getElementById('usrSuper').checked;
+    u.groups = selValues('usrGroupsChosen');
+    u.perms = selValues('usrPermsChosen');
+  }
+  renderUsers(); renderGroups();
+  showToast(currentUser > -1 ? 'User saved.' : 'User created.');
+  go('users-list');
+}
+
+function deactivateUser(){
+  const name = document.getElementById('usrUsername').value;
+  askConfirm({
+    title:'Deactivate this user?',
+    body:`<strong>${name}</strong> will no longer be able to sign in. The account, its groups and its audit history are kept, and you can reactivate it at any time.`,
+    ok:'Deactivate', danger:true,
+    onOk:()=>{
+      if(currentUser > -1){ USERS[currentUser].active = false; renderUsers(); }
+      showToast('User deactivated. Sign-in blocked, audit history kept.');
+      go('users-list');
+    }
+  });
+}
+
+function deleteUser(){
+  const name = document.getElementById('usrUsername').value;
+  askConfirm({
+    title:'Delete this user permanently?',
+    body:`<strong>${name}</strong> will be removed from the system.
+      <ul><li>Group memberships and direct permissions are lost</li>
+      <li>Audit log entries stay, but show an orphaned account</li></ul>
+      <p class="warn">This cannot be undone. Deactivate instead if you only need to block sign-in.</p>`,
+    ok:'Delete user', danger:true,
+    onOk:()=>{
+      if(currentUser > -1){ USERS.splice(currentUser, 1); currentUser = -1; renderUsers(); renderGroups(); }
+      showToast('User deleted.');
+      go('users-list');
+    }
+  });
+}
+
+function openUserPermByEmail(){
+  const email = document.getElementById('usrEmail').value;
+  const i = USERPERMS.findIndex(p=>p.email===email);
+  if(i > -1){ openUserPerm(i); }
+  else { showToast('No data permission record for this account yet.'); }
+}
+
+// --- groups ---
+function renderGroups(){
+  const t = document.getElementById('tbl-groups');
+  t.innerHTML = '<tr><th class="ctr"><input type="checkbox"></th><th>NAME</th><th class="ctr">PERMISSIONS</th><th class="ctr">USERS</th><th>DESCRIPTION</th></tr>';
+  GROUPS.forEach((g,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="ctr"><input type="checkbox"></td>
+      <td><a class="objname" href="#" onclick="openGroup(${i});return false;">${g.name}</a></td>
+      <td class="ctr">${g.perms.length}</td>
+      <td class="ctr">${usersInGroup(g.name).length}</td>
+      <td style="color:var(--muted);max-width:420px;">${g.desc}</td>`;
+    t.appendChild(tr);
+  });
+  document.getElementById('groupCount').textContent = GROUPS.length + ' groups';
+  fillUserGroupFilter();
+}
+
+function openGroup(i){
+  currentGroup = i;
+  const g = i > -1 ? GROUPS[i] : {name:'', desc:'', perms:[]};
+  document.getElementById('grpTitle').textContent = i > -1 ? 'Change group' : 'Add group';
+  document.getElementById('grpSub').textContent = i > -1 ? usersInGroup(g.name).length + ' members · ' + g.perms.length + ' permissions' : 'New group';
+  document.getElementById('grpName').value = g.name;
+  document.getElementById('grpDesc').value = g.desc;
+  fillSel('grpPermsChosen', g.perms);
+  fillSel('grpPermsAvail', PERMISSIONS.filter(p=>!g.perms.includes(p)));
+  const t = document.getElementById('tbl-group-members');
+  t.innerHTML = '<tr><th>USERNAME</th><th>EMAIL</th><th>DEPARTMENT</th><th>GROUPS</th></tr>';
+  const members = i > -1 ? usersInGroup(g.name) : [];
+  if(members.length === 0){
+    t.innerHTML += '<tr><td colspan="4" class="emptycell">No members yet. Add this group on a user form.</td></tr>';
+  } else {
+    members.forEach(u=>{
+      const idx = USERS.indexOf(u);
+      t.innerHTML += `<tr><td><a class="objname" href="#" onclick="openUser(${idx});return false;">${u.username}</a></td><td>${u.email}</td><td>${u.dept}</td><td>${u.groups.map(x=>'<span class="badge">'+x+'</span>').join(' ')}</td></tr>`;
+    });
+  }
+  go('group-detail');
+}
+
+function saveGroup(){
+  const name = document.getElementById('grpName').value || '(unnamed)';
+  const perms = selValues('grpPermsChosen');
+  const members = currentGroup > -1 ? usersInGroup(GROUPS[currentGroup].name).length : 0;
+  askConfirm({
+    title: currentGroup > -1 ? 'Save changes to this group?' : 'Create this group?',
+    body:`<strong>${name}</strong> will carry <strong>${perms.length}</strong> permission(s).
+      ${members ? `<p>${members} user(s) inherit this set immediately after saving.</p>` : ''}`,
+    ok: currentGroup > -1 ? 'Save changes' : 'Create group',
+    onOk: commitGroup,
+  });
+}
+
+function commitGroup(){
+  if(currentGroup > -1){
+    const g = GROUPS[currentGroup];
+    const oldName = g.name;
+    g.name = document.getElementById('grpName').value;
+    g.desc = document.getElementById('grpDesc').value;
+    g.perms = selValues('grpPermsChosen');
+    if(g.name !== oldName) USERS.forEach(u=>{ u.groups = u.groups.map(n=>n===oldName ? g.name : n); });
+  }
+  renderGroups(); renderUsers();
+  showToast(currentGroup > -1 ? 'Group saved.' : 'Group created.');
+  go('groups-list');
+}
+
+function deleteGroup(){
+  if(currentGroup < 0) return;
+  const g = GROUPS[currentGroup];
+  const n = usersInGroup(g.name).length;
+  if(n > 0){
+    askConfirm({
+      title:'This group cannot be deleted',
+      body:`<strong>${n}</strong> user(s) still belong to <strong>${g.name}</strong>. Move them to another group first, then delete.`,
+      ok:'Got it',
+      onOk:()=>{}
+    });
+    return;
+  }
+  askConfirm({
+    title:'Delete this group?',
+    body:`<strong>${g.name}</strong> and its ${g.perms.length} permission(s) will be removed. No user is affected because the group is empty.`,
+    ok:'Delete group', danger:true,
+    onOk:()=>{
+      GROUPS.splice(currentGroup, 1);
+      renderGroups(); renderUsers();
+      showToast('Group deleted.');
+      go('groups-list');
+    }
+  });
+}
+
+
+// ---------- Dashboard ----------
+const RANGES = {
+  '1':   {label:'24 ชั่วโมง', days:1,   points:12, tickFmt:'hour', qTotal:412,    users:186,  tokens:0.44, acc:92, errRate:0.7},
+  '7':   {label:'7 วัน',      days:7,   points:7,  tickFmt:'day',  qTotal:3018,   users:642,  tokens:3.1,  acc:91, errRate:0.9},
+  '28':  {label:'28 วัน',     days:28,  points:14, tickFmt:'day',  qTotal:12847,  users:1204, tokens:13.05,acc:91, errRate:1.1},
+  '90':  {label:'90 วัน',     days:90,  points:12, tickFmt:'week', qTotal:38420,  users:1688, tokens:39.6, acc:90, errRate:1.4},
+  '365': {label:'12 เดือน',   days:365, points:12, tickFmt:'month',qTotal:142900, users:2140, tokens:146.2,acc:89, errRate:1.8},
+};
+
+const DASH_DOMAINS = [
+  {th:'การจัดเก็บรายได้', share:.393},
+  {th:'การปราบปราม',     share:.334},
+  {th:'การตรวจสอบภาษี',  share:.187},
+  {th:'กฎหมาย',          share:.139},
+  {th:'การบริการ',       share:.088},
+];
+
+const DASH_UNITS = [
+  {name:'กลุ่มตรวจสอบภายใน', users:100, share:.29, sat:82},
+  {name:'สำนักงานเลขานุการกรม', users:95, share:.281, sat:79},
+  {name:'สำนักบริหารการคลังและรายได้', users:84, share:.218, sat:91},
+  {name:'สำนักบริหารทรัพยากรบุคคล', users:45, share:.126, sat:85},
+  {name:'ศูนย์เทคโนโลยีสารสนเทศ', users:30, share:.085, sat:80},
+];
+
+const DASH_LOGS = [
+  {ts:'2026-06-18 14:32:01', user:'Wipa C.', unit:'กลุ่มตรวจสอบภายใน', dom:'การตรวจสอบภาษี', tag:'Tax Audit', q:'วิเคราะห์ความผิดปกติของโครงสร้างราคา บริษัท Wine Co.'},
+  {ts:'2026-06-18 14:20:15', user:'Krit S.', unit:'สำนักงานเลขานุการกรม', dom:'การปราบปราม', tag:'Enforcement', q:'เบาะแสสุราผิดกฎหมายจากสื่อสังคมออนไลน์ จ.เชียงใหม่'},
+  {ts:'2026-06-18 14:10:44', user:'Somchai P.', unit:'สำนักบริหารการคลังและรายได้', dom:'การจัดเก็บรายได้', tag:'Revenue', q:'ประมาณการรายได้ภาษีสรรพสามิต ไตรมาส 3/2569'},
+  {ts:'2026-06-18 13:55:02', user:'ผู้ใช้งานทั่วไป', unit:'ศูนย์เทคโนโลยีสารสนเทศ', dom:'การบริการ', tag:'Services', q:'แบบฟอร์มลงทะเบียนธุรกรรมทางอิเล็กทรอนิกส์'},
+  {ts:'2026-06-18 13:41:37', user:'Nari S.', unit:'สำนักบริหารทรัพยากรบุคคล', dom:'กฎหมาย', tag:'Legal', q:'บทกำหนดโทษกรณียื่นแบบล่าช้าเกิน 30 วัน'},
+];
+
+let dashMetric = 'calls';
+
+function nf(n){ return Math.round(n).toLocaleString('en-US'); }
+function customDays(){
+  const a = new Date(document.getElementById('fFrom').value);
+  const b = new Date(document.getElementById('fTo').value);
+  const d = Math.round((b - a) / 86400000);
+  return isNaN(d) ? 28 : Math.max(1, d + 1);
+}
+function thDate(v){
+  if(!v) return '';
+  const d = new Date(v);
+  return d.getDate() + ' ' + ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
+function rangeCfg(){
+  const v = document.getElementById('fRange').value;
+  if(v !== 'custom') return RANGES[v];
+  const days = customDays();
+  const base = RANGES['28'];
+  const k = days / 28;
+  return {label:'กำหนดเอง (' + days + ' วัน)', days:days, custom:true,
+    qTotal:Math.round(base.qTotal * k),
+    users:Math.min(2140, Math.round(base.users * Math.pow(k, .45))),
+    tokens:+(base.tokens * k).toFixed(2),
+    acc:base.acc, errRate:base.errRate};
+}
+function unitFilter(){ return document.getElementById('fUnit').value; }
+function agentFilter(){ return ''; }
+
+// share of the total that current filters keep
+function filterFactor(){
+  let f = 1;
+  const u = unitFilter();
+  if(u){ const row = DASH_UNITS.find(r=>r.name===u); if(row) f *= row.share; }
+  const a = agentFilter();
+  if(a){ const row = DASH_DOMAINS.find(r=>r.th===a); if(row) f *= row.share; }
+  return f;
+}
+
+// deterministic pseudo-random so the mock looks real but stays stable
+
+
+
+
+
+function renderStats(){
+  const cfg = rangeCfg();
+  const f = filterFactor();
+  const q = cfg.qTotal * f;
+  const users = Math.max(1, Math.round(cfg.users * (unitFilter() ? f / (agentFilter() ? 1 : 1) : 1)));
+  const tok = cfg.tokens * f;
+  const delta = {'1':'+3.1%','7':'+5.4%','28':'+8.5%','90':'+11.2%','365':'+34.8%'}[document.getElementById('fRange').value] || '+6.7%';
+  document.getElementById('statGrid').innerHTML = `
+    <div class="card stat"><div class="stat-l">จำนวนคำถาม</div><div class="stat-v">${nf(q)}<span class="u">ครั้ง</span></div><div class="stat-d"><span class="up">${delta}</span> เทียบช่วงก่อนหน้า</div></div>
+    <div class="card stat"><div class="stat-l">ผู้ใช้งานที่ใช้งานจริง</div><div class="stat-v">${nf(users)}<span class="u">คน</span></div><div class="stat-d">เฉลี่ย ${(q/users).toFixed(1)} คำถามต่อคน</div></div>
+    <div class="card stat"><div class="stat-l">ปริมาณ Token</div><div class="stat-v">${tok.toFixed(2)}<span class="u">M</span></div><div class="stat-d">รับเข้า ${(tok*.27).toFixed(2)}M · ส่งออก ${(tok*.73).toFixed(2)}M</div></div>
+`;
+}
+
+function renderBarChart(){
+  const cfg = rangeCfg();
+  const f = filterFactor();
+  const rows = DASH_DOMAINS
+    .filter(d=>!agentFilter() || d.th === agentFilter())
+    .map(d=>({th:d.th, calls:cfg.qTotal * d.share * (agentFilter() ? 1 : 1) * (unitFilter() ? f/ (d.share) * d.share : 1), tokens:cfg.tokens * 1000000 * d.share * (unitFilter() ? f/d.share*d.share : 1)}))
+    .sort((a,b)=>b[dashMetric]-a[dashMetric]);
+  const max = rows[0] ? rows[0][dashMetric] : 1;
+  const top = max * 1.12 || 1;
+  let ticks = '';
+  for(let i = 0; i <= 4; i++){
+    const v = top * i / 4;
+    ticks += `<div class="tick" style="left:${i*25}%"><span>${dashMetric==='calls' ? nf(v) : (v/1000000).toFixed(1)+'M'}</span></div>`;
+  }
+  document.getElementById('barChart').innerHTML =
+    '<div class="bars">' + rows.map(r=>`<div class="barrow">
+        <div class="barlabel">${r.th}</div>
+        <div class="bartrack"><div class="bar" style="width:${(r[dashMetric]/top*100).toFixed(1)}%"></div></div>
+        <div class="barval">${dashMetric==='calls' ? nf(r[dashMetric]) : (r[dashMetric]/1000000).toFixed(2)+'M'}</div>
+      </div>`).join('') +
+    `<div class="baraxis"><div class="axisinner">${ticks}</div></div></div>`;
+}
+
+function setMetric(btn, m){
+  dashMetric = m;
+  [...document.getElementById('dashMetric').children].forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderBarChart();
+}
+
+function renderDonut(){
+  const cfg = rangeCfg();
+  const good = Math.round(18 + cfg.acc / 8);
+  const bad = Math.round(cfg.errRate * 5 + 2);
+  const none = 100 - good - bad;
+  document.getElementById('satA').textContent = good + '%';
+  document.getElementById('satB').textContent = bad + '%';
+  document.getElementById('satC').textContent = none + '%';
+  const data = [{v:good,c:'var(--chart-1)'},{v:bad,c:'var(--chart-3)'},{v:none,c:'var(--chart-muted)'}];
+  const R = 66, C = 2 * Math.PI * R;
+  let off = 0;
+  const arcs = data.map(d=>{
+    const len = (d.v/100) * C;
+    const s = `<circle cx="90" cy="90" r="${R}" fill="none" stroke="${d.c}" stroke-width="24" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 90 90)"></circle>`;
+    off += len;
+    return s;
+  }).join('');
+  document.getElementById('donut').innerHTML =
+    `<svg viewBox="0 0 180 180" class="donutsvg">${arcs}
+      <text x="90" y="86" class="dnum">${good}%</text><text x="90" y="104" class="dlab">พึงพอใจ</text></svg>`;
+}
+
+function renderUnits(){
+  const cfg = rangeCfg();
+  const only = unitFilter();
+  const rows = DASH_UNITS.filter(r=>!only || r.name === only);
+  const t = document.getElementById('tbl-units');
+  t.innerHTML = '<tr><th>หน่วยงาน</th><th class="ctr">ผู้ใช้งาน</th><th class="ctr">จำนวนคำถาม</th><th class="ctr">เฉลี่ยต่อคน</th><th class="ctr">Token รับเข้า</th><th class="ctr">Token ส่งออก</th><th class="ctr">ความพึงพอใจ</th></tr>';
+  let su = 0, sq = 0, si = 0, so = 0;
+  rows.forEach(r=>{
+    const q = cfg.qTotal * r.share;
+    const tin = cfg.tokens * 1000000 * r.share * .27;
+    const tout = cfg.tokens * 1000000 * r.share * .73;
+    su += r.users; sq += q; si += tin; so += tout;
+    t.innerHTML += `<tr><td>${r.name}</td><td class="ctr num">${nf(r.users)}</td><td class="ctr num">${nf(q)}</td>
+      <td class="ctr num">${(q/r.users).toFixed(1)}</td><td class="ctr num">${nf(tin)}</td><td class="ctr num">${nf(tout)}</td>
+      <td class="ctr"><div class="satcell"><div class="satbar"><i style="width:${r.sat}%"></i></div><span>${r.sat}%</span></div></td></tr>`;
+  });
+  t.innerHTML += `<tr class="totalrow"><td>รวมทั้งหมด</td><td class="ctr num">${nf(su)}</td><td class="ctr num">${nf(sq)}</td>
+    <td class="ctr num">${(sq/su).toFixed(1)}</td><td class="ctr num">${nf(si)}</td><td class="ctr num">${nf(so)}</td><td class="ctr">83%</td></tr>`;
+}
+
+function renderDashLogs(){
+  const t = document.getElementById('tbl-dashlogs');
+  const q = (document.getElementById('dashLogSearch').value || '').toLowerCase();
+  const u = unitFilter(), a = agentFilter();
+  t.innerHTML = '<tr><th>วัน-เวลา</th><th>ผู้ใช้งาน</th><th>สายงาน</th><th>คำถาม</th></tr>';
+  let shown = 0;
+  DASH_LOGS.forEach(r=>{
+    if(u && r.unit !== u) return;
+    if(a && r.dom !== a) return;
+    if(q && !(r.user + r.tag + r.q).toLowerCase().includes(q)) return;
+    shown++;
+    t.innerHTML += `<tr><td class="num">${r.ts}</td><td><strong>${r.user}</strong></td><td><span class="badge">${r.tag}</span></td><td>${r.q}</td></tr>`;
+  });
+  if(shown === 0) t.innerHTML += '<tr><td colspan="4" class="nodatacell">No data available</td></tr>';
+  document.getElementById('dashLogCount').textContent = 'แสดง ' + shown + ' จาก ' + DASH_LOGS.length + ' รายการ';
+}
+
+function renderDashboard(){
+  const cfg = rangeCfg();
+  const isCustom = document.getElementById('fRange').value === 'custom';
+  document.getElementById('dateRange').style.display = isCustom ? 'inline-flex' : 'none';
+  document.getElementById('rangeNote').textContent = isCustom
+    ? thDate(document.getElementById('fFrom').value) + ' – ' + thDate(document.getElementById('fTo').value) + ' · อัปเดตล่าสุด 17:30 น.'
+    : 'ข้อมูลย้อนหลัง ' + cfg.label + ' · อัปเดตล่าสุด 18 มิ.ย. 2569 17:30 น.';
+  renderStats();
+  renderBarChart();
+  renderDonut();
+  renderUnits();
+  renderDashLogs();
+}
+
+
+const CRUMBS = {
+  'dashboard2_unused':'x',
+  'users-list':'Home &rsaquo; Authentication and Authorization &rsaquo; Users',
+  'user-detail':'Home &rsaquo; Authentication and Authorization &rsaquo; Users &rsaquo; Change',
+  'groups-list':'Home &rsaquo; Authentication and Authorization &rsaquo; Groups',
+  'group-detail':'Home &rsaquo; Authentication and Authorization &rsaquo; Groups &rsaquo; Change',
+  'userperm-list':'Home &rsaquo; Authentication and Authorization &rsaquo; User Permissions',
+  'userperm-detail':'Home &rsaquo; Authentication and Authorization &rsaquo; User Permissions &rsaquo; Change',
+  'dspy-list':'Home &rsaquo; Config_app &rsaquo; Dspy configs',
+  'dspy-detail':'Home &rsaquo; Config_app &rsaquo; Dspy configs &rsaquo; Change',
+  'dashboard':'Home &rsaquo; Monitoring_app &rsaquo; Dashboard',
+  'auditlogs':'Home &rsaquo; Monitoring_app &rsaquo; Audit logs',
+  'apikeys-list':'Home &rsaquo; Api_app &rsaquo; API keys',
+  'apikey-detail':'Home &rsaquo; Api_app &rsaquo; API keys &rsaquo; Change',
+};
+
+// ---------- confirm dialog ----------
+let _confirmCb = null;
+function askConfirm(opts){
+  _confirmCb = opts.onOk || null;
+  document.getElementById('modalTitle').textContent = opts.title;
+  document.getElementById('modalBody').innerHTML = opts.body || '';
+  const ok = document.getElementById('modalOk');
+  ok.textContent = opts.ok || 'Confirm';
+  ok.className = 'btn ' + (opts.danger ? 'danger' : 'primary');
+  document.getElementById('modalBack').classList.add('open');
+  setTimeout(()=>ok.focus(), 30);
+}
+function closeConfirm(){
+  _confirmCb = null;
+  document.getElementById('modalBack').classList.remove('open');
+}
+function acceptConfirm(){
+  const cb = _confirmCb;
+  document.getElementById('modalBack').classList.remove('open');
+  _confirmCb = null;
+  if(cb) cb();
+}
+document.addEventListener('keydown', e=>{
+  if(!document.getElementById('modalBack').classList.contains('open')) return;
+  if(e.key === 'Escape') closeConfirm();
+  if(e.key === 'Enter') acceptConfirm();
+});
+
+function runBulk(selId, what){
+  const action = document.getElementById(selId).value;
+  askConfirm({
+    title:'Apply this action?',
+    body:`<strong>${action}</strong><p>This runs on every selected row in the ${what} list.</p>`,
+    ok:'Apply', danger:/Delete|Revoke|Deactivate/.test(action),
+    onOk:()=>showToast('Action applied.')
+  });
+}
+
+function toggleRail(){ document.body.classList.toggle('railed'); }
+
+function go(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.modlink').forEach(a=>a.classList.remove('active'));
+  if(view.startsWith('userperm')) document.getElementById('nav-userperm').classList.add('active');
+  else if(view.startsWith('user')) document.getElementById('nav-users').classList.add('active');
+  if(view.startsWith('group')) document.getElementById('nav-groups').classList.add('active');
+  if(view.startsWith('dspy')) document.getElementById('nav-dspy').classList.add('active');
+  if(view==='dashboard') document.getElementById('nav-dash').classList.add('active');
+  if(view==='auditlogs') document.getElementById('nav-audit').classList.add('active');
+  if(view.startsWith('apikey')) document.getElementById('nav-apikeys').classList.add('active');
+  document.title = (CRUMBS[view] || 'AI Agent').split(' &rsaquo; ').pop() + ' · AI Agent';
+  window.scrollTo(0,0);
+}
+
+renderUserPerms();
+renderGroups();
+renderUsers();
+renderDashboard();
+renderDspy();
+renderAudit();
+renderApiKeys();
+go('dashboard');
+</script>
+</body>
+</html>
